@@ -4,7 +4,7 @@ import { publishAll } from "./post-engine";
 let started = false;
 
 async function processDue() {
-  const due = getPendingDue();
+  const due = await getPendingDue();
   if (due.length === 0) return;
 
   console.log(`[SocialHub scheduler] Processing ${due.length} due post(s)`);
@@ -21,14 +21,14 @@ async function processDue() {
       });
 
       if (results.some((r) => r.success)) {
-        markPublished(post.id, results);
+        await markPublished(post.id, results);
         console.log(`[SocialHub scheduler] Published ${post.id}`);
       } else {
-        markFailed(post.id, results);
+        await markFailed(post.id, results);
         console.log(`[SocialHub scheduler] Failed ${post.id}`);
       }
     } catch (err) {
-      markFailed(post.id, [{ platform: "all", success: false, error: String(err) }]);
+      await markFailed(post.id, [{ platform: "all", success: false, error: String(err) }]);
     }
   }
 }

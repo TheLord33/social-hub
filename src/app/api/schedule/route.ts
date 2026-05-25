@@ -4,7 +4,7 @@ import { MediaType } from "@/lib/compatibility";
 import { Platform } from "@/lib/data";
 
 export async function GET() {
-  return Response.json(listScheduled());
+  return Response.json(await listScheduled());
 }
 
 export async function POST(request: NextRequest) {
@@ -19,7 +19,7 @@ export async function POST(request: NextRequest) {
     return Response.json({ error: "scheduledFor must be a valid future date" }, { status: 400 });
   }
 
-  const post = createScheduled({
+  const post = await createScheduled({
     content: body.content,
     platforms: body.platforms as Platform[],
     mediaType: (body.mediaType ?? "text") as MediaType,

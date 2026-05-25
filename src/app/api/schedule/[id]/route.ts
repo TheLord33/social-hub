@@ -6,7 +6,7 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-  const ok = cancelScheduled(id);
+  const ok = await cancelScheduled(id);
   if (!ok) return Response.json({ error: "Not found or already published" }, { status: 404 });
   return Response.json({ ok: true });
 }

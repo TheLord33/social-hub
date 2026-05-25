@@ -1,9 +1,11 @@
+import { Redis } from "@upstash/redis";
 import fs from "fs";
 import path from "path";
 import { Platform } from "./data";
 import { MediaType } from "./compatibility";
 
 const FILE = path.join(process.cwd(), "data", "scheduled.json");
+const REDIS_KEY = "socialhub:scheduled";
 
 export interface PostResult {
   platform: string;
@@ -21,13 +23,32 @@ export interface ScheduledPost {
   mediaUrl?: string;
   redditSubreddit?: string;
   redditTitle?: string;
-  scheduledFor: string; // ISO string (UTC)
+  scheduledFor: string;
   createdAt: string;
   status: "pending" | "published" | "failed";
   results?: PostResult[];
 }
 
-function read(): ScheduledPost[] {
+let _redis: Redis | null | undefined;
+
+function getRedis(): Redis | null {
+  if (_redis !== undefined) return _redis;
+  if (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN) {
+    _redis = new Redis({
+      url: process.env.UPSTASH_REDIS_REST_URL,
+      token: process.env.UPSTASH_REDIS_REST_TOKEN,
+    });
+  } else {
+    _redis = null;
+  }
+  return _redis;
+}
+
+async function read(): Promise<ScheduledPost[]> {
+  const redis = getRedis();
+  if (redis) {
+    return (await redis.get<ScheduledPost[]>(REDIS_KEY)) ?? [];
+  }
   try {
     return JSON.parse(fs.readFileSync(FILE, "utf-8"));
   } catch {
@@ -35,66 +56,73 @@ function read(): ScheduledPost[] {
   }
 }
 
-function write(posts: ScheduledPost[]) {
+async function write(posts: ScheduledPost[]): Promise<void> {
+  const redis = getRedis();
+  if (redis) {
+    await redis.set(REDIS_KEY, posts);
+    return;
+  }
   fs.mkdirSync(path.dirname(FILE), { recursive: true });
   fs.writeFileSync(FILE, JSON.stringify(posts, null, 2));
 }
 
-export function listScheduled(): ScheduledPost[] {
-  return read().sort(
+export async function listScheduled(): Promise<ScheduledPost[]> {
+  return (await read()).sort(
     (a, b) => new Date(a.scheduledFor).getTime() - new Date(b.scheduledFor).getTime()
   );
 }
 
-export function getScheduled(id: string): ScheduledPost | undefined {
-  return read().find((p) => p.id === id);
+export async function getScheduled(id: string): Promise<ScheduledPost | undefined> {
+  return (await read()).find((p) => p.id === id);
 }
 
-export function createScheduled(data: Omit<ScheduledPost, "id" | "createdAt" | "status">): ScheduledPost {
+export async function createScheduled(
+  data: Omit<ScheduledPost, "id" | "createdAt" | "status">
+): Promise<ScheduledPost> {
   const post: ScheduledPost = {
     ...data,
     id: `sched_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
     createdAt: new Date().toISOString(),
     status: "pending",
   };
-  const all = read();
+  const all = await read();
   all.push(post);
-  write(all);
+  await write(all);
   return post;
 }
 
-export function cancelScheduled(id: string): boolean {
-  const all = read();
+export async function cancelScheduled(id: string): Promise<boolean> {
+  const all = await read();
   const idx = all.findIndex((p) => p.id === id && p.status === "pending");
   if (idx === -1) return false;
   all.splice(idx, 1);
-  write(all);
+  await write(all);
   return true;
 }
 
-export function markPublished(id: string, results: PostResult[]) {
-  const all = read();
+export async function markPublished(id: string, results: PostResult[]): Promise<void> {
+  const all = await read();
   const post = all.find((p) => p.id === id);
   if (post) {
     post.status = "published";
     post.results = results;
-    write(all);
+    await write(all);
   }
 }
 
-export function markFailed(id: string, results: PostResult[]) {
-  const all = read();
+export async function markFailed(id: string, results: PostResult[]): Promise<void> {
+  const all = await read();
   const post = all.find((p) => p.id === id);
   if (post) {
     post.status = "failed";
     post.results = results;
-    write(all);
+    await write(all);
   }
 }
 
-export function getPendingDue(): ScheduledPost[] {
+export async function getPendingDue(): Promise<ScheduledPost[]> {
   const now = new Date();
-  return read().filter(
+  return (await read()).filter(
     (p) => p.status === "pending" && new Date(p.scheduledFor) <= now
   );
 }
