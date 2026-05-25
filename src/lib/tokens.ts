@@ -1,7 +1,9 @@
+import { Redis } from "@upstash/redis";
 import fs from "fs";
 import path from "path";
 
 const TOKEN_FILE = path.join(process.cwd(), "data", "tokens.json");
+const TOKENS_KEY = "socialhub:tokens";
 
 export interface TwitterToken {
   accessToken: string;
@@ -56,43 +58,66 @@ export interface TokenStore {
   reddit?: RedditToken;
 }
 
-export function readTokens(): TokenStore {
+let _redis: Redis | null | undefined;
+
+function getRedis(): Redis | null {
+  if (_redis !== undefined) return _redis;
+  if (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN) {
+    _redis = new Redis({
+      url: process.env.UPSTASH_REDIS_REST_URL,
+      token: process.env.UPSTASH_REDIS_REST_TOKEN,
+    });
+  } else {
+    _redis = null;
+  }
+  return _redis;
+}
+
+export async function readTokens(): Promise<TokenStore> {
+  const redis = getRedis();
+  if (redis) {
+    return (await redis.get<TokenStore>(TOKENS_KEY)) ?? {};
+  }
   try {
-    const raw = fs.readFileSync(TOKEN_FILE, "utf-8");
-    return JSON.parse(raw);
+    return JSON.parse(fs.readFileSync(TOKEN_FILE, "utf-8"));
   } catch {
     return {};
   }
 }
 
-export function writeTokens(tokens: TokenStore): void {
+export async function writeTokens(tokens: TokenStore): Promise<void> {
+  const redis = getRedis();
+  if (redis) {
+    await redis.set(TOKENS_KEY, tokens);
+    return;
+  }
   fs.mkdirSync(path.dirname(TOKEN_FILE), { recursive: true });
   fs.writeFileSync(TOKEN_FILE, JSON.stringify(tokens, null, 2));
 }
 
-export function setToken<K extends keyof TokenStore>(
+export async function setToken<K extends keyof TokenStore>(
   platform: K,
   data: TokenStore[K]
-): void {
-  const tokens = readTokens();
+): Promise<void> {
+  const tokens = await readTokens();
   tokens[platform] = data;
-  writeTokens(tokens);
+  await writeTokens(tokens);
 }
 
-export function deleteToken(platform: keyof TokenStore): void {
-  const tokens = readTokens();
+export async function deleteToken(platform: keyof TokenStore): Promise<void> {
+  const tokens = await readTokens();
   delete tokens[platform];
-  writeTokens(tokens);
+  await writeTokens(tokens);
 }
 
-export function getToken<K extends keyof TokenStore>(
+export async function getToken<K extends keyof TokenStore>(
   platform: K
-): TokenStore[K] | undefined {
-  return readTokens()[platform];
+): Promise<TokenStore[K] | undefined> {
+  return (await readTokens())[platform];
 }
 
 export async function refreshTwitterIfNeeded(): Promise<string | null> {
-  const t = getToken("twitter");
+  const t = await getToken("twitter");
   if (!t) return null;
   if (!t.expiresAt || Date.now() < t.expiresAt - 60_000) return t.accessToken;
   if (!t.refreshToken) return null;
@@ -108,7 +133,7 @@ export async function refreshTwitterIfNeeded(): Promise<string | null> {
   });
   if (!res.ok) return null;
   const data = await res.json();
-  setToken("twitter", {
+  await setToken("twitter", {
     ...t,
     accessToken: data.access_token,
     refreshToken: data.refresh_token ?? t.refreshToken,
@@ -118,7 +143,7 @@ export async function refreshTwitterIfNeeded(): Promise<string | null> {
 }
 
 export async function refreshTikTokIfNeeded(): Promise<string | null> {
-  const t = getToken("tiktok");
+  const t = await getToken("tiktok");
   if (!t) return null;
   if (!t.expiresAt || Date.now() < t.expiresAt - 60_000) return t.accessToken;
   if (!t.refreshToken) return null;
@@ -135,7 +160,7 @@ export async function refreshTikTokIfNeeded(): Promise<string | null> {
   });
   if (!res.ok) return null;
   const data = await res.json();
-  setToken("tiktok", {
+  await setToken("tiktok", {
     ...t,
     accessToken: data.access_token,
     refreshToken: data.refresh_token ?? t.refreshToken,
@@ -145,7 +170,7 @@ export async function refreshTikTokIfNeeded(): Promise<string | null> {
 }
 
 export async function refreshRedditIfNeeded(): Promise<string | null> {
-  const t = getToken("reddit");
+  const t = await getToken("reddit");
   if (!t) return null;
   if (!t.expiresAt || Date.now() < t.expiresAt - 60_000) return t.accessToken;
   if (!t.refreshToken) return null;
@@ -168,7 +193,7 @@ export async function refreshRedditIfNeeded(): Promise<string | null> {
   });
   if (!res.ok) return null;
   const data = await res.json();
-  setToken("reddit", {
+  await setToken("reddit", {
     ...t,
     accessToken: data.access_token,
     expiresAt: Date.now() + data.expires_in * 1000,

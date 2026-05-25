@@ -60,7 +60,7 @@ export async function GET(request: NextRequest) {
 
   const userData = await userRes.json();
 
-  setToken("twitter", {
+  await setToken("twitter", {
     accessToken: tokenData.access_token,
     refreshToken: tokenData.refresh_token,
     expiresAt: tokenData.expires_in

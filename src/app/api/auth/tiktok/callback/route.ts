@@ -53,7 +53,7 @@ export async function GET(request: NextRequest) {
   const userData = userRes.ok ? await userRes.json() : {};
   const displayName = userData.data?.user?.display_name ?? tokenData.open_id;
 
-  setToken("tiktok", {
+  await setToken("tiktok", {
     accessToken: tokenData.access_token,
     refreshToken: tokenData.refresh_token,
     expiresAt: tokenData.expires_in ? Date.now() + tokenData.expires_in * 1000 : undefined,

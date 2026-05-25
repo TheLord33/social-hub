@@ -19,7 +19,7 @@ export async function POST(
 
   // Twitter — revoke token via API
   if (key === "twitter") {
-    const t = getToken("twitter");
+    const t = await getToken("twitter");
     if (t?.accessToken && process.env.TWITTER_CLIENT_ID && process.env.TWITTER_CLIENT_SECRET) {
       const creds = Buffer.from(
         `${process.env.TWITTER_CLIENT_ID}:${process.env.TWITTER_CLIENT_SECRET}`
@@ -37,7 +37,7 @@ export async function POST(
 
   // TikTok — revoke token via API
   if (key === "tiktok") {
-    const t = getToken("tiktok");
+    const t = await getToken("tiktok");
     if (t?.accessToken && process.env.TIKTOK_CLIENT_KEY && process.env.TIKTOK_CLIENT_SECRET) {
       await fetch("https://open.tiktokapis.com/v2/oauth/revoke/", {
         method: "POST",
@@ -52,9 +52,9 @@ export async function POST(
   }
 
   // Meta — facebook and instagram share one OAuth session
-  if (key === "facebook") deleteToken("instagram");
-  if (key === "instagram") deleteToken("facebook");
+  if (key === "facebook") await deleteToken("instagram");
+  if (key === "instagram") await deleteToken("facebook");
 
-  deleteToken(key);
+  await deleteToken(key);
   return Response.json({ ok: true });
 }

@@ -39,7 +39,7 @@ async function postToTwitter(content: string, mediaType: MediaType, mediaUrl?: s
 
   const data = await res.json();
   const postId = data.data?.id;
-  const token = getToken("twitter");
+  const token = await getToken("twitter");
   return {
     platform: "twitter", success: true, postId,
     postUrl: postId && token?.username ? `https://twitter.com/${token.username}/status/${postId}` : undefined,
@@ -49,7 +49,7 @@ async function postToTwitter(content: string, mediaType: MediaType, mediaUrl?: s
 // ─── Facebook ─────────────────────────────────────────────────────────────────
 
 async function postToFacebook(content: string, mediaType: MediaType, mediaUrl?: string): Promise<PostResult> {
-  const t = getToken("facebook");
+  const t = await getToken("facebook");
   if (!t) return { platform: "facebook", success: false, error: "Not connected" };
 
   let endpoint: string;
@@ -84,7 +84,7 @@ async function postToFacebook(content: string, mediaType: MediaType, mediaUrl?: 
 // ─── Instagram ────────────────────────────────────────────────────────────────
 
 async function postToInstagram(content: string, mediaType: MediaType, mediaUrl?: string): Promise<PostResult> {
-  const t = getToken("instagram");
+  const t = await getToken("instagram");
   if (!t) return { platform: "instagram", success: false, error: "Not connected" };
 
   if (mediaType === "text" || !mediaUrl) {
@@ -125,7 +125,7 @@ async function postToInstagram(content: string, mediaType: MediaType, mediaUrl?:
 // ─── LinkedIn ─────────────────────────────────────────────────────────────────
 
 async function postToLinkedIn(content: string, mediaType: MediaType, mediaUrl?: string): Promise<PostResult> {
-  const t = getToken("linkedin");
+  const t = await getToken("linkedin");
   if (!t) return { platform: "linkedin", success: false, error: "Not connected" };
 
   if (mediaType === "video") {

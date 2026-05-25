@@ -57,7 +57,7 @@ export async function GET(request: NextRequest) {
   const user = await userRes.json();
   const personUrn = `urn:li:person:${user.sub}`;
 
-  setToken("linkedin", {
+  await setToken("linkedin", {
     accessToken: tokenData.access_token,
     refreshToken: tokenData.refresh_token,
     expiresAt: tokenData.expires_in

@@ -60,7 +60,7 @@ export async function GET(request: NextRequest) {
 
   const user = await userRes.json();
 
-  setToken("reddit", {
+  await setToken("reddit", {
     accessToken: tokenData.access_token,
     refreshToken: tokenData.refresh_token,
     expiresAt: tokenData.expires_in ? Date.now() + tokenData.expires_in * 1000 : undefined,

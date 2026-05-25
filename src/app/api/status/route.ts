@@ -1,7 +1,7 @@
 import { readTokens } from "@/lib/tokens";
 
 export async function GET() {
-  const tokens = readTokens();
+  const tokens = await readTokens();
 
   return Response.json({
     twitter: tokens.twitter

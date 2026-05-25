@@ -79,7 +79,7 @@ export async function GET(request: NextRequest) {
   // Use first page (user can expand this to pick a page in the future)
   const page = pages[0];
 
-  setToken("facebook", {
+  await setToken("facebook", {
     pageAccessToken: page.access_token,
     pageId: page.id,
     pageName: page.name,
@@ -101,7 +101,7 @@ export async function GET(request: NextRequest) {
 
       const igUser = igUserRes.ok ? await igUserRes.json() : {};
 
-      setToken("instagram", {
+      await setToken("instagram", {
         igUserId: igId,
         pageId: page.id,
         pageAccessToken: page.access_token,
