@@ -10,13 +10,15 @@ import {
   Zap,
   Settings,
   Bell,
+  CalendarClock,
 } from "lucide-react";
 
 const navItems = [
-  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/compose", label: "Compose", icon: PenSquare },
-  { href: "/analytics", label: "Analytics", icon: BarChart3 },
-  { href: "/accounts", label: "Accounts", icon: Users },
+  { href: "/dashboard",  label: "Dashboard",  icon: LayoutDashboard },
+  { href: "/compose",    label: "Compose",     icon: PenSquare },
+  { href: "/scheduled",  label: "Scheduled",   icon: CalendarClock },
+  { href: "/analytics",  label: "Analytics",   icon: BarChart3 },
+  { href: "/accounts",   label: "Accounts",    icon: Users },
 ];
 
 const bottomItems = [

@@ -22,7 +22,10 @@ import {
   ExternalLink,
   Ban,
   Info,
+  CalendarClock,
+  Clock,
 } from "lucide-react";
+import Link from "next/link";
 
 type ConnectionStatus = Record<string, { connected: boolean; username?: string }>;
 interface PostResult {
@@ -253,7 +256,13 @@ export default function Compose() {
   const [mediaUrl, setMediaUrl] = useState("");
   const [redditSubreddit, setRedditSubreddit] = useState("");
   const [redditTitle, setRedditTitle] = useState("");
+  const [mode, setMode] = useState<"now" | "schedule">("now");
+  const [scheduleTime, setScheduleTime] = useState(() => {
+    const d = new Date(Date.now() + 60 * 60 * 1000);
+    return d.toISOString().slice(0, 16);
+  });
   const [publishing, setPublishing] = useState(false);
+  const [scheduled, setScheduled] = useState(false);
   const [results, setResults] = useState<PostResult[] | null>(null);
   const [recentlyRemoved, setRecentlyRemoved] = useState<Platform[]>([]);
 
@@ -296,35 +305,62 @@ export default function Compose() {
 
   const needsMedia = mediaType !== "text";
   const redditSelected = selected.includes("reddit" as Platform);
+  const minDateTime = new Date(Date.now() + 60_000).toISOString().slice(0, 16);
   const canPublish =
     content.trim().length > 0 &&
     selected.length > 0 &&
     !publishing &&
     (!needsMedia || mediaUrl.trim().length > 0) &&
-    (!redditSelected || (redditSubreddit.trim().length > 0 && redditTitle.trim().length > 0));
+    (!redditSelected || (redditSubreddit.trim().length > 0 && redditTitle.trim().length > 0)) &&
+    (mode === "now" || scheduleTime > minDateTime);
 
   async function handlePublish() {
     if (!canPublish) return;
     setPublishing(true);
     setResults(null);
+    setScheduled(false);
     try {
-      const res = await fetch("/api/post", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          content,
-          platforms: selected,
-          mediaType,
-          mediaUrl: mediaUrl || undefined,
-          redditSubreddit,
-          redditTitle,
-        }),
-      });
-      const data = await res.json();
-      setResults(data.results);
-      if (data.results.some((r: PostResult) => r.success)) {
-        setContent("");
-        setMediaUrl("");
+      if (mode === "schedule") {
+        const res = await fetch("/api/schedule", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            content,
+            platforms: selected,
+            mediaType,
+            mediaUrl: mediaUrl || undefined,
+            redditSubreddit,
+            redditTitle,
+            scheduledFor: new Date(scheduleTime).toISOString(),
+          }),
+        });
+        if (res.ok) {
+          setScheduled(true);
+          setContent("");
+          setMediaUrl("");
+        } else {
+          const err = await res.json();
+          setResults([{ platform: "all", success: false, error: err.error }]);
+        }
+      } else {
+        const res = await fetch("/api/post", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            content,
+            platforms: selected,
+            mediaType,
+            mediaUrl: mediaUrl || undefined,
+            redditSubreddit,
+            redditTitle,
+          }),
+        });
+        const data = await res.json();
+        setResults(data.results);
+        if (data.results.some((r: PostResult) => r.success)) {
+          setContent("");
+          setMediaUrl("");
+        }
       }
     } catch (e) {
       setResults([{ platform: "all", success: false, error: String(e) }]);
@@ -523,6 +559,64 @@ export default function Compose() {
             </div>
           </div>
 
+          {/* Publish mode: now vs schedule */}
+          <div className="bg-white/[0.03] border border-white/[0.07] rounded-2xl p-1.5 flex gap-1">
+            {([
+              { value: "now",      icon: Send,          label: "Publish now" },
+              { value: "schedule", icon: CalendarClock, label: "Schedule" },
+            ] as const).map(({ value, icon: Icon, label }) => (
+              <button
+                key={value}
+                onClick={() => { setMode(value); setScheduled(false); setResults(null); }}
+                className={cn(
+                  "flex-1 flex items-center justify-center gap-2 py-2 rounded-xl text-sm font-medium transition-all",
+                  mode === value
+                    ? "bg-white/10 text-white border border-white/15"
+                    : "text-white/40 hover:text-white/70 hover:bg-white/5"
+                )}
+              >
+                <Icon className="w-4 h-4" /> {label}
+              </button>
+            ))}
+          </div>
+
+          {/* Date/time picker */}
+          {mode === "schedule" && (
+            <div className="bg-white/[0.03] border border-white/[0.07] rounded-2xl p-4">
+              <label className="text-white/40 text-xs font-medium mb-2 block">Publish at</label>
+              <input
+                type="datetime-local"
+                value={scheduleTime}
+                min={minDateTime}
+                onChange={(e) => setScheduleTime(e.target.value)}
+                className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white outline-none focus:border-violet-500/40 transition-colors [color-scheme:dark]"
+              />
+              {scheduleTime && (
+                <p className="text-white/25 text-xs mt-2 flex items-center gap-1.5">
+                  <Clock className="w-3 h-3" />
+                  {new Date(scheduleTime).toLocaleString(undefined, {
+                    weekday: "long", month: "long", day: "numeric",
+                    hour: "2-digit", minute: "2-digit",
+                  })}
+                </p>
+              )}
+            </div>
+          )}
+
+          {/* Scheduled success banner */}
+          {scheduled && (
+            <div className="flex items-center justify-between gap-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl px-4 py-3 text-sm">
+              <div className="flex items-center gap-2 text-emerald-400">
+                <CheckCircle2 className="w-4 h-4 shrink-0" />
+                Post scheduled for{" "}
+                {new Date(scheduleTime).toLocaleString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
+              </div>
+              <Link href="/scheduled" className="text-white/40 hover:text-white text-xs underline transition-colors shrink-0">
+                View scheduled →
+              </Link>
+            </div>
+          )}
+
           {/* Reddit-specific fields */}
           {redditSelected && (
             <div className="bg-orange-500/5 border border-orange-500/20 rounded-2xl p-4 space-y-3">
@@ -570,12 +664,11 @@ export default function Compose() {
             )}
           >
             {publishing ? (
-              <><Loader2 className="w-4 h-4 animate-spin" /> Publishing…</>
+              <><Loader2 className="w-4 h-4 animate-spin" /> {mode === "schedule" ? "Scheduling…" : "Publishing…"}</>
+            ) : mode === "schedule" ? (
+              <><CalendarClock className="w-4 h-4" /> Schedule for later</>
             ) : (
-              <>
-                <Send className="w-4 h-4" />
-                Publish {selected.length > 0 ? `to ${selected.length} platform${selected.length !== 1 ? "s" : ""}` : ""}
-              </>
+              <><Send className="w-4 h-4" /> Publish {selected.length > 0 ? `to ${selected.length} platform${selected.length !== 1 ? "s" : ""}` : ""}</>
             )}
           </button>
         </div>
