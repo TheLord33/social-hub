@@ -17,7 +17,7 @@ export const metadata: Metadata = {
   title: "SocialHub — Post Everywhere, Track Everything",
   description: "Manage and publish to all your social media platforms from one place.",
   other: {
-    "tiktok-developers-site-verification": "IIhVBmZ5nry1Zc6HZXCXuUBZoBvxfr2s",
+    "tiktok-developers-site-verification": "MUQkmeXpTMbp3Z14mLTlnGChxPwiTBVJ",
   },
 };
 
