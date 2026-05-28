@@ -27,5 +27,5 @@ export async function GET() {
     code_challenge_method: "S256",
   });
 
-  return Response.redirect(`https://twitter.com/i/oauth2/authorize?${params}`);
+  return Response.redirect(`https://x.com/i/oauth2/authorize?${params}`);
 }
