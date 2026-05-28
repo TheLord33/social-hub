@@ -12,7 +12,7 @@ export async function GET() {
     response_type: "code",
     client_id: clientId,
     redirect_uri: `${baseUrl}/api/auth/twitter/callback`,
-    scope: "tweet.write tweet.read users.read offline.access",
+    scope: "tweet.write tweet.read users.read",
     state,
     code_challenge: challenge,
     code_challenge_method: "S256",
