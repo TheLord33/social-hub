@@ -13,8 +13,9 @@ export async function GET() {
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3030";
 
   const cookieStore = await cookies();
-  cookieStore.set("tw_state", state, { httpOnly: true, maxAge: 600, path: "/" });
-  cookieStore.set("tw_verifier", verifier, { httpOnly: true, maxAge: 600, path: "/" });
+  const secure = process.env.NODE_ENV === "production";
+  cookieStore.set("tw_state", state, { httpOnly: true, maxAge: 600, path: "/", secure, sameSite: "lax" });
+  cookieStore.set("tw_verifier", verifier, { httpOnly: true, maxAge: 600, path: "/", secure, sameSite: "lax" });
 
   const params = new URLSearchParams({
     response_type: "code",

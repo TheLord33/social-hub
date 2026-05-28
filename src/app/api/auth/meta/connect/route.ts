@@ -11,7 +11,8 @@ export async function GET() {
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3030";
 
   const cookieStore = await cookies();
-  cookieStore.set("meta_state", state, { httpOnly: true, maxAge: 600, path: "/" });
+  const secure = process.env.NODE_ENV === "production";
+  cookieStore.set("meta_state", state, { httpOnly: true, maxAge: 600, path: "/", secure, sameSite: "lax" });
 
   const scopes = [
     "pages_show_list",
