@@ -42,7 +42,7 @@ export default function Home() {
         style={{ display: "none" }}
         aria-hidden="true"
       >
-        tiktok-developers-site-verification=IIhVBmZ5nry1Zc6HZXCXuUBZoBvxfr2s
+        tiktok-developers-site-verification=DRrcz63CHYhAHPnKMCzaC4YzFd1LROEC
       </span>
 
       {/* Hero */}

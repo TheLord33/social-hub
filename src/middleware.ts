@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const TIKTOK_TOKEN = "tiktok-developers-site-verification=Ko9YS5n8qaCaIZCI3xAxjwqNdARhc2ZN\ntiktok-developers-site-verification=IIhVBmZ5nry1Zc6HZXCXuUBZoBvxfr2s";
+const TIKTOK_TOKEN = "tiktok-developers-site-verification=Ko9YS5n8qaCaIZCI3xAxjwqNdARhc2ZN\ntiktok-developers-site-verification=IIhVBmZ5nry1Zc6HZXCXuUBZoBvxfr2s\ntiktok-developers-site-verification=DRrcz63CHYhAHPnKMCzaC4YzFd1LROEC";
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
