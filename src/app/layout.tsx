@@ -31,6 +31,9 @@ export default function RootLayout({
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
+      <head>
+        <meta name="tiktok-developers-site-verification" content="DRrcz63CHYhAHPnKMCzaC4YzFd1LROEC" />
+      </head>
       <body className="min-h-full bg-[#080810] text-white">
         <Sidebar />
         <main className="ml-64 min-h-screen">{children}</main>
