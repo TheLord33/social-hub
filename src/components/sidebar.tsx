@@ -11,6 +11,7 @@ import {
   Settings,
   Bell,
   CalendarClock,
+  Compass,
 } from "lucide-react";
 
 const navItems = [
@@ -18,6 +19,7 @@ const navItems = [
   { href: "/compose",    label: "Compose",     icon: PenSquare },
   { href: "/scheduled",  label: "Scheduled",   icon: CalendarClock },
   { href: "/analytics",  label: "Analytics",   icon: BarChart3 },
+  { href: "/discover",   label: "Discover",    icon: Compass },
   { href: "/accounts",   label: "Accounts",    icon: Users },
 ];
 
