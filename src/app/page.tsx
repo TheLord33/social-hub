@@ -142,6 +142,10 @@ export default function Home() {
           </div>
         </div>
       </section>
+      {/* Footer */}
+      <footer className="border-t border-white/[0.04] py-6 text-center text-white/20 text-xs">
+        © {new Date().getFullYear()} SocialHub — Made with ♥
+      </footer>
     </div>
   );
 }
