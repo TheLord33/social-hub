@@ -1,4 +1,4 @@
-import { getToken, refreshTwitterIfNeeded, refreshTikTokIfNeeded, refreshRedditIfNeeded } from "./tokens";
+import { getToken, refreshTwitterIfNeeded, refreshTikTokIfNeeded, refreshRedditIfNeeded, refreshYouTubeIfNeeded } from "./tokens";
 import { MediaType } from "./compatibility";
 
 export interface PostResult {
@@ -16,6 +16,8 @@ export interface PublishRequest {
   mediaUrl?: string;
   redditSubreddit?: string;
   redditTitle?: string;
+  youtubeTitle?: string;
+  youtubePrivacy?: "public" | "unlisted" | "private";
 }
 
 // ─── Twitter ──────────────────────────────────────────────────────────────────
@@ -230,10 +232,89 @@ async function postToReddit(
   return { platform: "reddit", success: true, postId: data.json?.data?.id, postUrl: data.json?.data?.url };
 }
 
+// ─── YouTube ──────────────────────────────────────────────────────────────────
+
+async function postToYouTube(
+  content: string,
+  mediaUrl: string | undefined,
+  youtubeTitle: string,
+  youtubePrivacy: "public" | "unlisted" | "private"
+): Promise<PostResult> {
+  const accessToken = await refreshYouTubeIfNeeded();
+  if (!accessToken) return { platform: "youtube", success: false, error: "Not connected" };
+  if (!mediaUrl) return { platform: "youtube", success: false, error: "YouTube requires a video file." };
+  if (!youtubeTitle.trim()) return { platform: "youtube", success: false, error: "YouTube requires a video title." };
+
+  // Fetch the video from Vercel Blob
+  const fileRes = await fetch(mediaUrl);
+  if (!fileRes.ok) return { platform: "youtube", success: false, error: "Could not fetch video file." };
+
+  const contentType = fileRes.headers.get("content-type") ?? "video/mp4";
+  const videoBuffer = await fileRes.arrayBuffer();
+
+  // Initiate YouTube resumable upload session
+  const initRes = await fetch(
+    "https://www.googleapis.com/upload/youtube/v3/videos?uploadType=resumable&part=snippet,status",
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
+        "X-Upload-Content-Type": contentType,
+        "X-Upload-Content-Length": String(videoBuffer.byteLength),
+      },
+      body: JSON.stringify({
+        snippet: {
+          title: youtubeTitle.trim(),
+          description: content.trim(),
+          categoryId: "22",
+        },
+        status: { privacyStatus: youtubePrivacy },
+      }),
+    }
+  );
+
+  if (!initRes.ok) {
+    const err = await initRes.json().catch(() => ({}));
+    return { platform: "youtube", success: false, error: err.error?.message ?? "Failed to initiate upload" };
+  }
+
+  const uploadUrl = initRes.headers.get("location");
+  if (!uploadUrl) return { platform: "youtube", success: false, error: "No upload URL returned by YouTube" };
+
+  // Upload the video binary
+  const uploadRes = await fetch(uploadUrl, {
+    method: "PUT",
+    headers: {
+      "Content-Type": contentType,
+      "Content-Length": String(videoBuffer.byteLength),
+    },
+    body: videoBuffer,
+  });
+
+  if (!uploadRes.ok) {
+    const err = await uploadRes.json().catch(() => ({}));
+    return { platform: "youtube", success: false, error: err.error?.message ?? "Video upload failed" };
+  }
+
+  const data = await uploadRes.json();
+  const videoId = data.id;
+  return {
+    platform: "youtube",
+    success: true,
+    postId: videoId,
+    postUrl: videoId ? `https://www.youtube.com/watch?v=${videoId}` : undefined,
+  };
+}
+
 // ─── Dispatcher ───────────────────────────────────────────────────────────────
 
 export async function publishAll(req: PublishRequest): Promise<PostResult[]> {
-  const { content, platforms, mediaType = "text", mediaUrl, redditSubreddit = "", redditTitle = "" } = req;
+  const {
+    content, platforms, mediaType = "text", mediaUrl,
+    redditSubreddit = "", redditTitle = "",
+    youtubeTitle = "", youtubePrivacy = "public",
+  } = req;
 
   const jobs: Promise<PostResult>[] = [];
 
@@ -243,6 +324,7 @@ export async function publishAll(req: PublishRequest): Promise<PostResult[]> {
   if (platforms.includes("linkedin"))  jobs.push(postToLinkedIn(content, mediaType, mediaUrl));
   if (platforms.includes("tiktok"))    jobs.push(postToTikTok(content, mediaUrl));
   if (platforms.includes("reddit"))    jobs.push(postToReddit(content, mediaType, mediaUrl, redditSubreddit, redditTitle));
+  if (platforms.includes("youtube"))   jobs.push(postToYouTube(content, mediaUrl, youtubeTitle, youtubePrivacy));
 
   const settled = await Promise.allSettled(jobs);
   return settled.map((r) =>

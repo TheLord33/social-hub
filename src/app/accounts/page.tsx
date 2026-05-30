@@ -24,6 +24,7 @@ const OAUTH_MAP: Partial<Record<Platform, string>> = {
   linkedin:  "/api/auth/linkedin/connect",
   tiktok:    "/api/auth/tiktok/connect",
   reddit:    "/api/auth/reddit/connect",
+  youtube:   "/api/auth/youtube/connect",
 };
 
 function StatusBanner() {
@@ -37,6 +38,7 @@ function StatusBanner() {
     linkedin: "LinkedIn connected successfully!",
     tiktok: "TikTok connected successfully!",
     reddit: "Reddit connected successfully!",
+    youtube: "YouTube connected successfully!",
   };
 
   const errorMessages: Record<string, string> = {
@@ -45,12 +47,16 @@ function StatusBanner() {
     linkedin_denied: "LinkedIn authorization was denied.",
     tiktok_denied: "TikTok authorization was denied.",
     reddit_denied: "Reddit authorization was denied.",
+    youtube_denied: "YouTube authorization was denied.",
     meta_no_pages: "No Facebook Pages found. Create a page first.",
+    youtube_no_channel: "No YouTube channel found on this Google account.",
     twitter_token_failed: "Twitter token exchange failed. Check your credentials.",
     meta_token_failed: "Meta token exchange failed. Check your credentials.",
     linkedin_token_failed: "LinkedIn token exchange failed. Check your credentials.",
     tiktok_token_failed: "TikTok token exchange failed. Check your credentials.",
     reddit_token_failed: "Reddit token exchange failed. Check your credentials.",
+    youtube_token_failed: "YouTube token exchange failed. Check your credentials.",
+    youtube_channel_failed: "Could not fetch YouTube channel info.",
   };
 
   if (!success && !error) return null;
@@ -258,7 +264,8 @@ export default function Accounts() {
           <p>4. <strong className="text-white/70">LinkedIn</strong> → linkedin.com/developers → Create app → &quot;Share on LinkedIn&quot; product → callback: <code className="text-white/40 text-xs">/api/auth/linkedin/callback</code></p>
           <p>5. <strong className="text-white/70">TikTok</strong> → developers.tiktok.com → Create app → Content Posting API → callback: <code className="text-white/40 text-xs">/api/auth/tiktok/callback</code></p>
           <p>6. <strong className="text-white/70">Reddit</strong> → reddit.com/prefs/apps → Create app (web app type) → callback: <code className="text-white/40 text-xs">/api/auth/reddit/callback</code></p>
-          <p>7. Restart the dev server after updating <code className="text-violet-300 bg-violet-500/10 px-1.5 py-0.5 rounded text-xs">.env.local</code></p>
+          <p>7. <strong className="text-white/70">YouTube</strong> → console.cloud.google.com → Create project → Enable YouTube Data API v3 → OAuth 2.0 credentials → callback: <code className="text-white/40 text-xs">/api/auth/youtube/callback</code></p>
+          <p>8. Restart the dev server after updating <code className="text-violet-300 bg-violet-500/10 px-1.5 py-0.5 rounded text-xs">.env.local</code></p>
         </div>
       </div>
     </div>

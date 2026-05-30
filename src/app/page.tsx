@@ -7,6 +7,7 @@ const platforms = [
   { name: "Facebook",      color: "from-blue-500 to-indigo-600",  letter: "FB" },
   { name: "LinkedIn",      color: "from-cyan-500 to-blue-700",    letter: "LI" },
   { name: "TikTok",        color: "from-slate-600 to-slate-800",  letter: "TT" },
+  { name: "YouTube",       color: "from-red-500 to-red-700",      letter: "YT" },
   { name: "Reddit",        color: "from-orange-500 to-red-600",   letter: "RD" },
 ];
 
@@ -29,7 +30,7 @@ const features = [
   {
     icon: Globe,
     title: "Multi-Platform Support",
-    description: "Connect Twitter, Instagram, Facebook, LinkedIn, TikTok, and Reddit from one place.",
+    description: "Connect Twitter, Instagram, Facebook, LinkedIn, TikTok, YouTube, and Reddit from one place.",
   },
 ];
 
@@ -58,7 +59,7 @@ export default function Home() {
 
         <p className="text-lg text-white/50 max-w-2xl mx-auto mb-10 leading-relaxed">
           SocialHub connects all your social media accounts in one place. Compose, schedule,
-          and analyze your content across Twitter, Instagram, Facebook, LinkedIn, TikTok, and Reddit.
+          and analyze your content across Twitter, Instagram, Facebook, LinkedIn, TikTok, YouTube, and Reddit.
         </p>
 
         <div className="flex items-center justify-center gap-4 flex-wrap">
@@ -82,7 +83,7 @@ export default function Home() {
         <p className="text-center text-white/30 text-sm uppercase tracking-widest font-medium mb-10">
           Supported Platforms
         </p>
-        <div className="grid grid-cols-3 sm:grid-cols-6 gap-4">
+        <div className="grid grid-cols-4 sm:grid-cols-7 gap-4">
           {platforms.map((p) => (
             <div key={p.name} className="flex flex-col items-center gap-2">
               <div

@@ -15,6 +15,8 @@ export async function POST(request: NextRequest) {
     mediaUrl: body.mediaUrl,
     redditSubreddit: body.redditSubreddit,
     redditTitle: body.redditTitle,
+    youtubeTitle: body.youtubeTitle,
+    youtubePrivacy: body.youtubePrivacy,
   });
 
   return Response.json({ results }, { status: results.some((r) => r.success) ? 200 : 422 });

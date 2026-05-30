@@ -23,6 +23,8 @@ export interface ScheduledPost {
   mediaUrl?: string;
   redditSubreddit?: string;
   redditTitle?: string;
+  youtubeTitle?: string;
+  youtubePrivacy?: "public" | "unlisted" | "private";
   scheduledFor: string;
   createdAt: string;
   status: "pending" | "published" | "failed";

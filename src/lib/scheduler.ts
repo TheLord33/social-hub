@@ -18,6 +18,8 @@ async function processDue() {
         mediaUrl: post.mediaUrl,
         redditSubreddit: post.redditSubreddit,
         redditTitle: post.redditTitle,
+        youtubeTitle: post.youtubeTitle,
+        youtubePrivacy: post.youtubePrivacy,
       });
 
       if (results.some((r) => r.success)) {

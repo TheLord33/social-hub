@@ -24,6 +24,8 @@ import {
   Info,
   CalendarClock,
   Clock,
+  Upload,
+  FileVideo,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -254,8 +256,14 @@ export default function Compose() {
   const [mediaType, setMediaType] = useState<MediaType>("text");
   const [content, setContent] = useState("");
   const [mediaUrl, setMediaUrl] = useState("");
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [fileName, setFileName] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [redditSubreddit, setRedditSubreddit] = useState("");
   const [redditTitle, setRedditTitle] = useState("");
+  const [youtubeTitle, setYoutubeTitle] = useState("");
+  const [youtubePrivacy, setYoutubePrivacy] = useState<"public" | "unlisted" | "private">("public");
   const [mode, setMode] = useState<"now" | "schedule">("now");
   const [scheduleTime, setScheduleTime] = useState(() => {
     const d = new Date(Date.now() + 60 * 60 * 1000);
@@ -282,6 +290,8 @@ export default function Compose() {
   function switchMediaType(next: MediaType) {
     setMediaType(next);
     setMediaUrl("");
+    setFileName(null);
+    setUploadError(null);
     setResults(null);
     const nowIncompat = selected.filter((p) => !isCompatible(p, next));
     if (nowIncompat.length) {
@@ -305,6 +315,7 @@ export default function Compose() {
 
   const needsMedia = mediaType !== "text";
   const redditSelected = selected.includes("reddit" as Platform);
+  const youtubeSelected = selected.includes("youtube" as Platform) && mediaType === "video";
   const minDateTime = new Date(Date.now() + 60_000).toISOString().slice(0, 16);
   const canPublish =
     content.trim().length > 0 &&
@@ -312,7 +323,31 @@ export default function Compose() {
     !publishing &&
     (!needsMedia || mediaUrl.trim().length > 0) &&
     (!redditSelected || (redditSubreddit.trim().length > 0 && redditTitle.trim().length > 0)) &&
+    (!youtubeSelected || youtubeTitle.trim().length > 0) &&
     (mode === "now" || scheduleTime > minDateTime);
+
+  async function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    setUploadError(null);
+    setMediaUrl("");
+    setFileName(file.name);
+    try {
+      const form = new FormData();
+      form.append("file", file);
+      const res = await fetch("/api/upload", { method: "POST", body: form });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Upload failed");
+      setMediaUrl(data.url);
+    } catch (err) {
+      setUploadError(String(err instanceof Error ? err.message : err));
+      setFileName(null);
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  }
 
   async function handlePublish() {
     if (!canPublish) return;
@@ -331,6 +366,8 @@ export default function Compose() {
             mediaUrl: mediaUrl || undefined,
             redditSubreddit,
             redditTitle,
+            youtubeTitle,
+            youtubePrivacy,
             scheduledFor: new Date(scheduleTime).toISOString(),
           }),
         });
@@ -353,6 +390,8 @@ export default function Compose() {
             mediaUrl: mediaUrl || undefined,
             redditSubreddit,
             redditTitle,
+            youtubeTitle,
+            youtubePrivacy,
           }),
         });
         const data = await res.json();
@@ -505,40 +544,63 @@ export default function Compose() {
               className="w-full bg-transparent text-white text-sm leading-relaxed p-5 resize-none outline-none placeholder:text-white/20 min-h-[180px]"
             />
 
-            {/* Media URL input */}
+            {/* Media file upload */}
             {needsMedia && (
               <div className="px-5 pb-4">
-                <div className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-xl px-3 py-2 focus-within:border-violet-500/40 transition-colors">
-                  {mediaType === "image" ? (
-                    <ImageIcon className="w-4 h-4 text-white/30 shrink-0" />
-                  ) : (
-                    <Video className="w-4 h-4 text-white/30 shrink-0" />
-                  )}
-                  <input
-                    type="url"
-                    value={mediaUrl}
-                    onChange={(e) => setMediaUrl(e.target.value)}
-                    placeholder={
-                      mediaType === "image"
-                        ? "Paste image URL (https://…)"
-                        : "Paste video URL (https://…)"
-                    }
-                    className="flex-1 bg-transparent text-sm text-white placeholder:text-white/25 outline-none"
-                  />
-                  {mediaUrl && (
-                    <button
-                      onClick={() => setMediaUrl("")}
-                      className="text-white/20 hover:text-white/50 transition-colors"
-                    >
-                      <XCircle className="w-4 h-4" />
-                    </button>
-                  )}
-                </div>
-                {!mediaUrl && (
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept={mediaType === "image" ? "image/jpeg,image/png,image/gif,image/webp" : "video/mp4,video/quicktime,video/webm"}
+                  onChange={handleFileSelect}
+                  className="hidden"
+                />
+
+                {/* Uploaded file pill */}
+                {(mediaUrl || uploading) && !uploadError ? (
+                  <div className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-xl px-3 py-2">
+                    {uploading ? (
+                      <Loader2 className="w-4 h-4 text-violet-400 animate-spin shrink-0" />
+                    ) : mediaType === "image" ? (
+                      <ImageIcon className="w-4 h-4 text-emerald-400 shrink-0" />
+                    ) : (
+                      <FileVideo className="w-4 h-4 text-emerald-400 shrink-0" />
+                    )}
+                    <span className="flex-1 text-sm text-white/70 truncate">
+                      {uploading ? "Uploading…" : fileName ?? "File uploaded"}
+                    </span>
+                    {!uploading && (
+                      <button
+                        onClick={() => { setMediaUrl(""); setFileName(null); }}
+                        className="text-white/20 hover:text-white/50 transition-colors"
+                      >
+                        <XCircle className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={uploading}
+                    className="w-full flex items-center justify-center gap-2 py-4 rounded-xl border border-dashed border-white/15 hover:border-violet-500/40 hover:bg-violet-500/5 text-white/40 hover:text-white/70 text-sm transition-all"
+                  >
+                    <Upload className="w-4 h-4" />
+                    {mediaType === "image" ? "Upload image (JPG, PNG, GIF, WebP · max 10MB)" : "Upload video (MP4, MOV, WebM · max 500MB)"}
+                  </button>
+                )}
+
+                {uploadError && (
+                  <div className="flex items-center gap-2 mt-2 text-red-400 text-xs">
+                    <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                    {uploadError}
+                    <button onClick={() => fileInputRef.current?.click()} className="underline hover:text-red-300 ml-1">Try again</button>
+                  </div>
+                )}
+
+                {!mediaUrl && !uploading && !uploadError && (
                   <p className="text-white/25 text-xs mt-1.5 ml-1">
                     {mediaType === "image"
                       ? "Required for Instagram. Enhances Twitter, Facebook, and LinkedIn."
-                      : "Required for Instagram Reels and Facebook video posts."}
+                      : "Required for Instagram Reels, Facebook, and TikTok."}
                   </p>
                 )}
               </div>
@@ -648,6 +710,40 @@ export default function Compose() {
                   className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-sm text-white placeholder:text-white/20 outline-none focus:border-orange-500/40 transition-colors"
                 />
                 <p className="text-white/20 text-xs mt-1 text-right">{redditTitle.length}/300</p>
+              </div>
+            </div>
+          )}
+
+          {/* YouTube-specific fields */}
+          {youtubeSelected && (
+            <div className="bg-red-500/5 border border-red-500/20 rounded-2xl p-4 space-y-3">
+              <p className="text-red-300/80 text-xs font-semibold uppercase tracking-wider flex items-center gap-1.5">
+                <span className="w-4 h-4 rounded bg-red-500/20 flex items-center justify-center text-[10px] font-bold text-red-400">YT</span>
+                YouTube options
+              </p>
+              <div>
+                <label className="text-white/40 text-xs mb-1.5 block">Video title <span className="text-red-400">*</span></label>
+                <input
+                  type="text"
+                  value={youtubeTitle}
+                  onChange={(e) => setYoutubeTitle(e.target.value)}
+                  placeholder="Enter a title for your YouTube video…"
+                  maxLength={100}
+                  className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-sm text-white placeholder:text-white/20 outline-none focus:border-red-500/40 transition-colors"
+                />
+                <p className="text-white/20 text-xs mt-1 text-right">{youtubeTitle.length}/100</p>
+              </div>
+              <div>
+                <label className="text-white/40 text-xs mb-1.5 block">Privacy</label>
+                <select
+                  value={youtubePrivacy}
+                  onChange={(e) => setYoutubePrivacy(e.target.value as "public" | "unlisted" | "private")}
+                  className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-sm text-white outline-none focus:border-red-500/40 transition-colors [color-scheme:dark]"
+                >
+                  <option value="public">Public</option>
+                  <option value="unlisted">Unlisted</option>
+                  <option value="private">Private</option>
+                </select>
               </div>
             </div>
           )}

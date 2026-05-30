@@ -22,5 +22,8 @@ export async function GET() {
     reddit: tokens.reddit
       ? { connected: true, username: `u/${tokens.reddit.username}` }
       : { connected: false },
+    youtube: tokens.youtube
+      ? { connected: true, username: tokens.youtube.channelTitle }
+      : { connected: false },
   });
 }

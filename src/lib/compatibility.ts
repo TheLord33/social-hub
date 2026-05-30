@@ -41,9 +41,9 @@ export const COMPATIBILITY: Record<Platform, Record<MediaType, CompatEntry>> = {
     video: { supported: true,  label: "Video link", warning: "Posted as a link post. Requires a subreddit and title." },
   },
   youtube: {
-    text:  { supported: false, note: "YouTube requires a video file upload." },
-    image: { supported: false, note: "YouTube requires a video file upload." },
-    video: { supported: false, note: "YouTube video upload isn't supported yet." },
+    text:  { supported: false, note: "YouTube requires a video — text-only posts aren't supported." },
+    image: { supported: false, note: "YouTube only accepts video content." },
+    video: { supported: true,  label: "YouTube video", warning: "Requires a video title." },
   },
 };
 

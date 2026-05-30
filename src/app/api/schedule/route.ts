@@ -26,6 +26,8 @@ export async function POST(request: NextRequest) {
     mediaUrl: body.mediaUrl,
     redditSubreddit: body.redditSubreddit,
     redditTitle: body.redditTitle,
+    youtubeTitle: body.youtubeTitle,
+    youtubePrivacy: body.youtubePrivacy,
     scheduledFor: scheduledFor.toISOString(),
   });
 

@@ -49,6 +49,14 @@ export interface RedditToken {
   username: string;
 }
 
+export interface YouTubeToken {
+  accessToken: string;
+  refreshToken?: string;
+  expiresAt?: number;
+  channelId: string;
+  channelTitle: string;
+}
+
 export interface TokenStore {
   twitter?: TwitterToken;
   facebook?: FacebookToken;
@@ -56,6 +64,7 @@ export interface TokenStore {
   linkedin?: LinkedInToken;
   tiktok?: TikTokToken;
   reddit?: RedditToken;
+  youtube?: YouTubeToken;
 }
 
 let _redis: Redis | null | undefined;
@@ -164,6 +173,32 @@ export async function refreshTikTokIfNeeded(): Promise<string | null> {
     ...t,
     accessToken: data.access_token,
     refreshToken: data.refresh_token ?? t.refreshToken,
+    expiresAt: Date.now() + data.expires_in * 1000,
+  });
+  return data.access_token;
+}
+
+export async function refreshYouTubeIfNeeded(): Promise<string | null> {
+  const t = await getToken("youtube");
+  if (!t) return null;
+  if (!t.expiresAt || Date.now() < t.expiresAt - 60_000) return t.accessToken;
+  if (!t.refreshToken) return null;
+
+  const res = await fetch("https://oauth2.googleapis.com/token", {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({
+      client_id: process.env.GOOGLE_CLIENT_ID!,
+      client_secret: process.env.GOOGLE_CLIENT_SECRET!,
+      grant_type: "refresh_token",
+      refresh_token: t.refreshToken,
+    }),
+  });
+  if (!res.ok) return null;
+  const data = await res.json();
+  await setToken("youtube", {
+    ...t,
+    accessToken: data.access_token,
     expiresAt: Date.now() + data.expires_in * 1000,
   });
   return data.access_token;
