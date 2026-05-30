@@ -4,10 +4,7 @@ const TIKTOK_TOKEN = "tiktok-developers-site-verification=Ko9YS5n8qaCaIZCI3xAxjw
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  if (
-    pathname === "/tiktok-developers-site-verification.txt" ||
-    pathname === "/tiktok-developers-site-verification.txt/"
-  ) {
+  if (pathname.startsWith("/tiktok-developers-site-verification")) {
     return new NextResponse(TIKTOK_TOKEN, {
       headers: { "Content-Type": "text/plain" },
     });
@@ -15,5 +12,5 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/tiktok-developers-site-verification.txt", "/tiktok-developers-site-verification.txt/"],
+  matcher: ["/tiktok-developers-site-verification(.*)"],
 };
