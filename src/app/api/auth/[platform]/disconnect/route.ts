@@ -2,7 +2,7 @@ import { NextRequest } from "next/server";
 import { deleteToken, getToken, TokenStore } from "@/lib/tokens";
 
 const VALID_PLATFORMS: Array<keyof TokenStore> = [
-  "twitter", "facebook", "instagram", "linkedin", "tiktok", "reddit",
+  "twitter", "facebook", "instagram", "linkedin", "tiktok", "reddit", "youtube",
 ];
 
 export async function POST(
