@@ -58,6 +58,7 @@ export default function DiscoverPage() {
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
   const [reddit, setReddit] = useState<{ subreddits: Subreddit[]; posts: RedditPost[] } | null>(null);
+  const [rdError, setRdError] = useState<string | null>(null);
   const [youtube, setYoutube] = useState<{ channels: YTChannel[]; videos: YTVideo[] } | null>(null);
   const [ytError, setYtError] = useState<string | null>(null);
 
@@ -67,6 +68,7 @@ export default function DiscoverPage() {
     setLoading(true);
     setSearched(true);
     setReddit(null);
+    setRdError(null);
     setYoutube(null);
     setYtError(null);
 
@@ -76,7 +78,12 @@ export default function DiscoverPage() {
       fetch(`/api/discover/youtube?topic=${q}`).then((r) => r.json()),
     ]);
 
-    if (rdRes.status === "fulfilled" && !rdRes.value.error) setReddit(rdRes.value);
+    if (rdRes.status === "fulfilled" && !rdRes.value.error) {
+      setReddit(rdRes.value);
+    } else if (rdRes.status === "fulfilled" && rdRes.value.error === "reddit_not_configured") {
+      setRdError("Connect your Reddit account (or add Reddit API credentials) to see community results.");
+    }
+
     if (ytRes.status === "fulfilled" && !ytRes.value.error) {
       setYoutube(ytRes.value);
     } else if (ytRes.status === "fulfilled" && ytRes.value.error === "YouTube not connected") {
@@ -130,6 +137,28 @@ export default function DiscoverPage() {
       {/* Results */}
       {searched && !loading && (
         <div className="space-y-12">
+          {/* Reddit not configured notice */}
+          {rdError && (
+            <section>
+              <div className="flex items-center gap-2.5 mb-5">
+                <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-orange-500 to-red-600 flex items-center justify-center text-white text-xs font-bold">
+                  RD
+                </div>
+                <h2 className="text-white font-semibold">Reddit</h2>
+              </div>
+              <div className="flex items-center gap-3 p-4 rounded-xl bg-white/[0.03] border border-white/10 text-white/40 text-sm">
+                <AlertCircle className="w-4 h-4 shrink-0 text-yellow-500/60" />
+                {rdError}
+                <Link
+                  href="/accounts"
+                  className="ml-auto text-violet-400 hover:text-violet-300 transition-colors shrink-0 text-sm font-medium"
+                >
+                  Connect →
+                </Link>
+              </div>
+            </section>
+          )}
+
           {/* Reddit */}
           {reddit && (
             <section>
