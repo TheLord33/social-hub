@@ -17,6 +17,7 @@ export interface PostResult {
 
 export interface ScheduledPost {
   id: string;
+  userId: string;
   content: string;
   platforms: Platform[];
   mediaType: MediaType;
@@ -68,10 +69,10 @@ async function write(posts: ScheduledPost[]): Promise<void> {
   fs.writeFileSync(FILE, JSON.stringify(posts, null, 2));
 }
 
-export async function listScheduled(): Promise<ScheduledPost[]> {
-  return (await read()).sort(
-    (a, b) => new Date(a.scheduledFor).getTime() - new Date(b.scheduledFor).getTime()
-  );
+export async function listScheduled(userId: string): Promise<ScheduledPost[]> {
+  return (await read())
+    .filter((p) => p.userId === userId)
+    .sort((a, b) => new Date(a.scheduledFor).getTime() - new Date(b.scheduledFor).getTime());
 }
 
 export async function getScheduled(id: string): Promise<ScheduledPost | undefined> {

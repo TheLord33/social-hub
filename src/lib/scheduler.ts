@@ -12,6 +12,7 @@ async function processDue() {
   for (const post of due) {
     try {
       const results = await publishAll({
+        userId: post.userId,
         content: post.content,
         platforms: post.platforms,
         mediaType: post.mediaType,

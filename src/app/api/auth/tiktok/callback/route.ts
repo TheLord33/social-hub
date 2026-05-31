@@ -1,17 +1,21 @@
 import { NextRequest } from "next/server";
 import { cookies } from "next/headers";
 import { setToken } from "@/lib/tokens";
+import { auth } from "@/auth";
 
 export async function GET(request: NextRequest) {
+  const session = await auth();
+  const userId = session?.user?.id;
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3030";
+
+  if (!userId) return Response.redirect(`${baseUrl}/login`);
+
   const url = request.nextUrl;
   const code = url.searchParams.get("code");
   const state = url.searchParams.get("state");
   const error = url.searchParams.get("error");
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3030";
 
-  if (error) {
-    return Response.redirect(`${baseUrl}/accounts?error=tiktok_denied`);
-  }
+  if (error) return Response.redirect(`${baseUrl}/accounts?error=tiktok_denied`);
 
   const cookieStore = await cookies();
   const savedState = cookieStore.get("tt_state")?.value;
@@ -37,18 +41,12 @@ export async function GET(request: NextRequest) {
     }),
   });
 
-  if (!tokenRes.ok) {
-    console.error("TikTok token error:", await tokenRes.text());
-    return Response.redirect(`${baseUrl}/accounts?error=tiktok_token_failed`);
-  }
-
+  if (!tokenRes.ok) return Response.redirect(`${baseUrl}/accounts?error=tiktok_token_failed`);
   const tokenData = await tokenRes.json();
 
-  // Fetch display name
-  const userRes = await fetch(
-    "https://open.tiktokapis.com/v2/user/info/?fields=open_id,display_name",
-    { headers: { Authorization: `Bearer ${tokenData.access_token}` } }
-  );
+  const userRes = await fetch("https://open.tiktokapis.com/v2/user/info/?fields=open_id,display_name", {
+    headers: { Authorization: `Bearer ${tokenData.access_token}` },
+  });
 
   const userData = userRes.ok ? await userRes.json() : {};
   const displayName = userData.data?.user?.display_name ?? tokenData.open_id;
@@ -59,7 +57,7 @@ export async function GET(request: NextRequest) {
     expiresAt: tokenData.expires_in ? Date.now() + tokenData.expires_in * 1000 : undefined,
     openId: tokenData.open_id,
     displayName,
-  });
+  }, userId);
 
   return Response.redirect(`${baseUrl}/accounts?success=tiktok`);
 }

@@ -1,17 +1,21 @@
 import { NextRequest } from "next/server";
 import { cookies } from "next/headers";
 import { setToken } from "@/lib/tokens";
+import { auth } from "@/auth";
 
 export async function GET(request: NextRequest) {
+  const session = await auth();
+  const userId = session?.user?.id;
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3030";
+
+  if (!userId) return Response.redirect(`${baseUrl}/login`);
+
   const url = request.nextUrl;
   const code = url.searchParams.get("code");
   const state = url.searchParams.get("state");
   const error = url.searchParams.get("error");
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3030";
 
-  if (error) {
-    return Response.redirect(`${baseUrl}/accounts?error=twitter_denied`);
-  }
+  if (error) return Response.redirect(`${baseUrl}/accounts?error=twitter_denied`);
 
   const cookieStore = await cookies();
   const savedState = cookieStore.get("tw_state")?.value;
@@ -30,10 +34,7 @@ export async function GET(request: NextRequest) {
 
   const tokenRes = await fetch("https://api.twitter.com/2/oauth2/token", {
     method: "POST",
-    headers: {
-      "Content-Type": "application/x-www-form-urlencoded",
-      Authorization: `Basic ${credentials}`,
-    },
+    headers: { "Content-Type": "application/x-www-form-urlencoded", Authorization: `Basic ${credentials}` },
     body: new URLSearchParams({
       grant_type: "authorization_code",
       code,
@@ -42,33 +43,23 @@ export async function GET(request: NextRequest) {
     }),
   });
 
-  if (!tokenRes.ok) {
-    const err = await tokenRes.text();
-    console.error("Twitter token error:", err);
-    return Response.redirect(`${baseUrl}/accounts?error=twitter_token_failed`);
-  }
-
+  if (!tokenRes.ok) return Response.redirect(`${baseUrl}/accounts?error=twitter_token_failed`);
   const tokenData = await tokenRes.json();
 
   const userRes = await fetch("https://api.twitter.com/2/users/me", {
     headers: { Authorization: `Bearer ${tokenData.access_token}` },
   });
 
-  if (!userRes.ok) {
-    return Response.redirect(`${baseUrl}/accounts?error=twitter_user_failed`);
-  }
-
+  if (!userRes.ok) return Response.redirect(`${baseUrl}/accounts?error=twitter_user_failed`);
   const userData = await userRes.json();
 
   await setToken("twitter", {
     accessToken: tokenData.access_token,
     refreshToken: tokenData.refresh_token,
-    expiresAt: tokenData.expires_in
-      ? Date.now() + tokenData.expires_in * 1000
-      : undefined,
+    expiresAt: tokenData.expires_in ? Date.now() + tokenData.expires_in * 1000 : undefined,
     userId: userData.data.id,
     username: userData.data.username,
-  });
+  }, userId);
 
   return Response.redirect(`${baseUrl}/accounts?success=twitter`);
 }

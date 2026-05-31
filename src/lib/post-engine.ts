@@ -18,12 +18,13 @@ export interface PublishRequest {
   redditTitle?: string;
   youtubeTitle?: string;
   youtubePrivacy?: "public" | "unlisted" | "private";
+  userId: string;
 }
 
 // ─── Twitter ──────────────────────────────────────────────────────────────────
 
-async function postToTwitter(content: string, mediaType: MediaType, mediaUrl?: string): Promise<PostResult> {
-  const accessToken = await refreshTwitterIfNeeded();
+async function postToTwitter(content: string, mediaType: MediaType, mediaUrl: string | undefined, userId: string): Promise<PostResult> {
+  const accessToken = await refreshTwitterIfNeeded(userId);
   if (!accessToken) return { platform: "twitter", success: false, error: "Not connected" };
 
   const text = mediaType !== "text" && mediaUrl ? `${content}\n\n${mediaUrl}`.trim() : content;
@@ -41,7 +42,7 @@ async function postToTwitter(content: string, mediaType: MediaType, mediaUrl?: s
 
   const data = await res.json();
   const postId = data.data?.id;
-  const token = await getToken("twitter");
+  const token = await getToken("twitter", userId);
   return {
     platform: "twitter", success: true, postId,
     postUrl: postId && token?.username ? `https://twitter.com/${token.username}/status/${postId}` : undefined,
@@ -50,8 +51,8 @@ async function postToTwitter(content: string, mediaType: MediaType, mediaUrl?: s
 
 // ─── Facebook ─────────────────────────────────────────────────────────────────
 
-async function postToFacebook(content: string, mediaType: MediaType, mediaUrl?: string): Promise<PostResult> {
-  const t = await getToken("facebook");
+async function postToFacebook(content: string, mediaType: MediaType, mediaUrl: string | undefined, userId: string): Promise<PostResult> {
+  const t = await getToken("facebook", userId);
   if (!t) return { platform: "facebook", success: false, error: "Not connected" };
 
   let endpoint: string;
@@ -85,8 +86,8 @@ async function postToFacebook(content: string, mediaType: MediaType, mediaUrl?: 
 
 // ─── Instagram ────────────────────────────────────────────────────────────────
 
-async function postToInstagram(content: string, mediaType: MediaType, mediaUrl?: string): Promise<PostResult> {
-  const t = await getToken("instagram");
+async function postToInstagram(content: string, mediaType: MediaType, mediaUrl: string | undefined, userId: string): Promise<PostResult> {
+  const t = await getToken("instagram", userId);
   if (!t) return { platform: "instagram", success: false, error: "Not connected" };
 
   if (mediaType === "text" || !mediaUrl) {
@@ -126,8 +127,8 @@ async function postToInstagram(content: string, mediaType: MediaType, mediaUrl?:
 
 // ─── LinkedIn ─────────────────────────────────────────────────────────────────
 
-async function postToLinkedIn(content: string, mediaType: MediaType, mediaUrl?: string): Promise<PostResult> {
-  const t = await getToken("linkedin");
+async function postToLinkedIn(content: string, mediaType: MediaType, mediaUrl: string | undefined, userId: string): Promise<PostResult> {
+  const t = await getToken("linkedin", userId);
   if (!t) return { platform: "linkedin", success: false, error: "Not connected" };
 
   if (mediaType === "video") {
@@ -163,8 +164,8 @@ async function postToLinkedIn(content: string, mediaType: MediaType, mediaUrl?: 
 
 // ─── TikTok ───────────────────────────────────────────────────────────────────
 
-async function postToTikTok(content: string, mediaUrl?: string): Promise<PostResult> {
-  const accessToken = await refreshTikTokIfNeeded();
+async function postToTikTok(content: string, mediaUrl: string | undefined, userId: string): Promise<PostResult> {
+  const accessToken = await refreshTikTokIfNeeded(userId);
   if (!accessToken) return { platform: "tiktok", success: false, error: "Not connected" };
 
   if (!mediaUrl) return { platform: "tiktok", success: false, error: "TikTok requires a video URL." };
@@ -201,9 +202,10 @@ async function postToReddit(
   mediaType: MediaType,
   mediaUrl: string | undefined,
   subreddit: string,
-  title: string
+  title: string,
+  userId: string
 ): Promise<PostResult> {
-  const accessToken = await refreshRedditIfNeeded();
+  const accessToken = await refreshRedditIfNeeded(userId);
   if (!accessToken) return { platform: "reddit", success: false, error: "Not connected" };
 
   const sr = subreddit.replace(/^\/?r\//, "").trim();
@@ -238,21 +240,20 @@ async function postToYouTube(
   content: string,
   mediaUrl: string | undefined,
   youtubeTitle: string,
-  youtubePrivacy: "public" | "unlisted" | "private"
+  youtubePrivacy: "public" | "unlisted" | "private",
+  userId: string
 ): Promise<PostResult> {
-  const accessToken = await refreshYouTubeIfNeeded();
+  const accessToken = await refreshYouTubeIfNeeded(userId);
   if (!accessToken) return { platform: "youtube", success: false, error: "Not connected" };
   if (!mediaUrl) return { platform: "youtube", success: false, error: "YouTube requires a video file." };
   if (!youtubeTitle.trim()) return { platform: "youtube", success: false, error: "YouTube requires a video title." };
 
-  // Fetch the video from Vercel Blob
   const fileRes = await fetch(mediaUrl);
   if (!fileRes.ok) return { platform: "youtube", success: false, error: "Could not fetch video file." };
 
   const contentType = fileRes.headers.get("content-type") ?? "video/mp4";
   const videoBuffer = await fileRes.arrayBuffer();
 
-  // Initiate YouTube resumable upload session
   const initRes = await fetch(
     "https://www.googleapis.com/upload/youtube/v3/videos?uploadType=resumable&part=snippet,status",
     {
@@ -264,11 +265,7 @@ async function postToYouTube(
         "X-Upload-Content-Length": String(videoBuffer.byteLength),
       },
       body: JSON.stringify({
-        snippet: {
-          title: youtubeTitle.trim(),
-          description: content.trim(),
-          categoryId: "22",
-        },
+        snippet: { title: youtubeTitle.trim(), description: content.trim(), categoryId: "22" },
         status: { privacyStatus: youtubePrivacy },
       }),
     }
@@ -282,13 +279,9 @@ async function postToYouTube(
   const uploadUrl = initRes.headers.get("location");
   if (!uploadUrl) return { platform: "youtube", success: false, error: "No upload URL returned by YouTube" };
 
-  // Upload the video binary
   const uploadRes = await fetch(uploadUrl, {
     method: "PUT",
-    headers: {
-      "Content-Type": contentType,
-      "Content-Length": String(videoBuffer.byteLength),
-    },
+    headers: { "Content-Type": contentType, "Content-Length": String(videoBuffer.byteLength) },
     body: videoBuffer,
   });
 
@@ -300,9 +293,7 @@ async function postToYouTube(
   const data = await uploadRes.json();
   const videoId = data.id;
   return {
-    platform: "youtube",
-    success: true,
-    postId: videoId,
+    platform: "youtube", success: true, postId: videoId,
     postUrl: videoId ? `https://www.youtube.com/watch?v=${videoId}` : undefined,
   };
 }
@@ -314,17 +305,18 @@ export async function publishAll(req: PublishRequest): Promise<PostResult[]> {
     content, platforms, mediaType = "text", mediaUrl,
     redditSubreddit = "", redditTitle = "",
     youtubeTitle = "", youtubePrivacy = "public",
+    userId,
   } = req;
 
   const jobs: Promise<PostResult>[] = [];
 
-  if (platforms.includes("twitter"))   jobs.push(postToTwitter(content, mediaType, mediaUrl));
-  if (platforms.includes("facebook"))  jobs.push(postToFacebook(content, mediaType, mediaUrl));
-  if (platforms.includes("instagram")) jobs.push(postToInstagram(content, mediaType, mediaUrl));
-  if (platforms.includes("linkedin"))  jobs.push(postToLinkedIn(content, mediaType, mediaUrl));
-  if (platforms.includes("tiktok"))    jobs.push(postToTikTok(content, mediaUrl));
-  if (platforms.includes("reddit"))    jobs.push(postToReddit(content, mediaType, mediaUrl, redditSubreddit, redditTitle));
-  if (platforms.includes("youtube"))   jobs.push(postToYouTube(content, mediaUrl, youtubeTitle, youtubePrivacy));
+  if (platforms.includes("twitter"))   jobs.push(postToTwitter(content, mediaType, mediaUrl, userId));
+  if (platforms.includes("facebook"))  jobs.push(postToFacebook(content, mediaType, mediaUrl, userId));
+  if (platforms.includes("instagram")) jobs.push(postToInstagram(content, mediaType, mediaUrl, userId));
+  if (platforms.includes("linkedin"))  jobs.push(postToLinkedIn(content, mediaType, mediaUrl, userId));
+  if (platforms.includes("tiktok"))    jobs.push(postToTikTok(content, mediaUrl, userId));
+  if (platforms.includes("reddit"))    jobs.push(postToReddit(content, mediaType, mediaUrl, redditSubreddit, redditTitle, userId));
+  if (platforms.includes("youtube"))   jobs.push(postToYouTube(content, mediaUrl, youtubeTitle, youtubePrivacy, userId));
 
   const settled = await Promise.allSettled(jobs);
   return settled.map((r) =>

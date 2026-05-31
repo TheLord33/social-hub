@@ -1,6 +1,7 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useSession, signOut } from "next-auth/react";
 import { cn } from "@/lib/utils";
 import {
   LayoutDashboard,
@@ -12,6 +13,7 @@ import {
   Bell,
   CalendarClock,
   Compass,
+  LogOut,
 } from "lucide-react";
 
 const navItems = [
@@ -101,16 +103,8 @@ export function Sidebar() {
           </Link>
         ))}
 
-        {/* User */}
-        <div className="flex items-center gap-3 px-3 py-2.5 mt-2">
-          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-violet-500 to-pink-500 flex items-center justify-center text-white text-xs font-bold shrink-0">
-            SH
-          </div>
-          <div className="min-w-0">
-            <p className="text-white/80 text-sm font-medium truncate">SocialHub</p>
-            <p className="text-white/30 text-xs truncate">Pro Plan</p>
-          </div>
-        </div>
+        {/* User + Logout */}
+        <UserRow />
       </div>
     </aside>
   );
@@ -159,5 +153,31 @@ export function MobileNav() {
         );
       })}
     </nav>
+  );
+}
+
+function UserRow() {
+  const { data: session } = useSession();
+  const name  = session?.user?.name  ?? "SocialHub";
+  const email = session?.user?.email ?? "";
+  const initials = name.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase();
+
+  return (
+    <div className="flex items-center gap-3 px-3 py-2.5 mt-2">
+      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-violet-500 to-pink-500 flex items-center justify-center text-white text-xs font-bold shrink-0">
+        {initials}
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className="text-white/80 text-sm font-medium truncate">{name}</p>
+        <p className="text-white/30 text-xs truncate">{email}</p>
+      </div>
+      <button
+        onClick={() => signOut({ callbackUrl: "/login" })}
+        title="Sign out"
+        className="shrink-0 text-white/30 hover:text-white/70 transition"
+      >
+        <LogOut size={15} />
+      </button>
+    </div>
   );
 }

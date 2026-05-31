@@ -1,8 +1,13 @@
 import { NextRequest } from "next/server";
 import { publishAll } from "@/lib/post-engine";
 import { MediaType } from "@/lib/compatibility";
+import { auth } from "@/auth";
 
 export async function POST(request: NextRequest) {
+  const session = await auth();
+  const userId = session?.user?.id;
+  if (!userId) return Response.json({ error: "Unauthorized" }, { status: 401 });
+
   const body = await request.json().catch(() => null);
   if (!body?.content || !Array.isArray(body.platforms)) {
     return Response.json({ error: "content and platforms are required" }, { status: 400 });
@@ -17,6 +22,7 @@ export async function POST(request: NextRequest) {
     redditTitle: body.redditTitle,
     youtubeTitle: body.youtubeTitle,
     youtubePrivacy: body.youtubePrivacy,
+    userId,
   });
 
   return Response.json({ results }, { status: results.some((r) => r.success) ? 200 : 422 });
