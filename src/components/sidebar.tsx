@@ -153,7 +153,7 @@ export function MobileNav() {
           <Link
             key={href}
             href={href}
-            className="flex-1 flex flex-col items-center justify-center py-2 gap-0.5"
+            className="relative flex-1 flex flex-col items-center justify-center py-2 gap-0.5"
           >
             <Icon
               size={20}
