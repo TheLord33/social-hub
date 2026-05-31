@@ -123,9 +123,9 @@ export function MobileNav() {
   const allItems = [
     { href: "/dashboard",  label: "Home",      icon: LayoutDashboard },
     { href: "/compose",    label: "Compose",   icon: PenSquare },
+    { href: "/scheduled",  label: "Scheduled", icon: CalendarClock },
     { href: "/discover",   label: "Discover",  icon: Compass },
     { href: "/accounts",   label: "Accounts",  icon: Users },
-    { href: "/settings",   label: "Settings",  icon: Settings },
   ];
 
   return (
