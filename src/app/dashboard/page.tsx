@@ -13,7 +13,7 @@ export default function Dashboard() {
   const recentPosts = MOCK_POSTS.filter((p) => p.status === "published").slice(0, 3);
 
   return (
-    <div className="px-8 py-8 max-w-7xl">
+    <div className="px-4 py-6 lg:px-8 lg:py-8 max-w-7xl">
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-white">Dashboard</h1>
@@ -27,7 +27,7 @@ export default function Dashboard() {
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <StatsCard
           label="Total Views"
           value={TOTAL_STATS.totalViews}
@@ -63,9 +63,9 @@ export default function Dashboard() {
         />
       </div>
 
-      <div className="grid grid-cols-3 gap-6 mb-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
         {/* Chart */}
-        <div className="col-span-2">
+        <div className="lg:col-span-2">
           <AnalyticsChart />
         </div>
 
@@ -114,7 +114,7 @@ export default function Dashboard() {
             View all <ArrowRight className="w-4 h-4" />
           </Link>
         </div>
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           {recentPosts.map((post) => (
             <PostCard key={post.id} post={post} />
           ))}
