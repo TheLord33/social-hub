@@ -28,11 +28,12 @@ const bottomItems = [
   { href: "/settings", label: "Settings", icon: Settings },
 ];
 
+// Desktop sidebar — hidden on mobile
 export function Sidebar() {
   const pathname = usePathname();
 
   return (
-    <aside className="fixed left-0 top-0 h-full w-64 bg-[#0d0d14] border-r border-white/5 flex flex-col z-50">
+    <aside className="hidden lg:flex fixed left-0 top-0 h-full w-64 bg-[#0d0d14] border-r border-white/5 flex-col z-50">
       {/* Logo */}
       <div className="px-6 py-6 border-b border-white/5">
         <div className="flex items-center gap-3">
@@ -112,5 +113,69 @@ export function Sidebar() {
         </div>
       </div>
     </aside>
+  );
+}
+
+// Mobile bottom nav — hidden on desktop
+export function MobileNav() {
+  const pathname = usePathname();
+
+  const allItems = [
+    { href: "/dashboard",  label: "Home",      icon: LayoutDashboard },
+    { href: "/compose",    label: "Compose",   icon: PenSquare },
+    { href: "/discover",   label: "Discover",  icon: Compass },
+    { href: "/accounts",   label: "Accounts",  icon: Users },
+    { href: "/settings",   label: "Settings",  icon: Settings },
+  ];
+
+  return (
+    <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-[#0d0d14] border-t border-white/5 flex items-stretch">
+      {allItems.map(({ href, label, icon: Icon }) => {
+        const active = pathname === href || pathname.startsWith(href + "/");
+        const isCompose = href === "/compose";
+
+        if (isCompose) {
+          return (
+            <Link
+              key={href}
+              href={href}
+              className="flex-1 flex flex-col items-center justify-center py-2 gap-0.5"
+            >
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-600 to-indigo-600 flex items-center justify-center shadow-lg shadow-violet-500/30 -mt-4">
+                <Icon size={18} className="text-white" />
+              </div>
+              <span className="text-[10px] font-medium text-white/50 mt-0.5">{label}</span>
+            </Link>
+          );
+        }
+
+        return (
+          <Link
+            key={href}
+            href={href}
+            className="flex-1 flex flex-col items-center justify-center py-2 gap-0.5"
+          >
+            <Icon
+              size={20}
+              className={cn(
+                "transition-colors",
+                active ? "text-violet-400" : "text-white/40"
+              )}
+            />
+            <span
+              className={cn(
+                "text-[10px] font-medium transition-colors",
+                active ? "text-violet-400" : "text-white/40"
+              )}
+            >
+              {label}
+            </span>
+            {active && (
+              <span className="absolute bottom-1 w-1 h-1 rounded-full bg-violet-400" />
+            )}
+          </Link>
+        );
+      })}
+    </nav>
   );
 }
