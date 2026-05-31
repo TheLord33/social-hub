@@ -126,28 +126,13 @@ export function MobileNav() {
     { href: "/scheduled",  label: "Scheduled", icon: CalendarClock },
     { href: "/discover",   label: "Discover",  icon: Compass },
     { href: "/accounts",   label: "Accounts",  icon: Users },
+    { href: "/settings",   label: "Settings",  icon: Settings },
   ];
 
   return (
     <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-[#0d0d14] border-t border-white/5 flex items-stretch">
       {allItems.map(({ href, label, icon: Icon }) => {
         const active = pathname === href || pathname.startsWith(href + "/");
-        const isCompose = href === "/compose";
-
-        if (isCompose) {
-          return (
-            <Link
-              key={href}
-              href={href}
-              className="flex-1 flex flex-col items-center justify-center py-2 gap-0.5"
-            >
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-600 to-indigo-600 flex items-center justify-center shadow-lg shadow-violet-500/30 -mt-4">
-                <Icon size={18} className="text-white" />
-              </div>
-              <span className="text-[10px] font-medium text-white/50 mt-0.5">{label}</span>
-            </Link>
-          );
-        }
 
         return (
           <Link
@@ -157,14 +142,11 @@ export function MobileNav() {
           >
             <Icon
               size={20}
-              className={cn(
-                "transition-colors",
-                active ? "text-violet-400" : "text-white/40"
-              )}
+              className={cn("transition-colors", active ? "text-violet-400" : "text-white/40")}
             />
             <span
               className={cn(
-                "text-[10px] font-medium transition-colors",
+                "text-[9px] font-medium transition-colors",
                 active ? "text-violet-400" : "text-white/40"
               )}
             >
