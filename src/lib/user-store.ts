@@ -10,6 +10,7 @@ export interface User {
   name: string;
   passwordHash: string;
   plan: "free" | "pro";
+  stripeCustomerId?: string;
   createdAt: number;
 }
 
@@ -47,6 +48,37 @@ export async function getUserByEmail(email: string): Promise<User | null> {
   return readLocalUsers()[email.toLowerCase()] ?? null;
 }
 
+export async function updateUser(
+  email: string,
+  updates: Partial<Pick<User, "plan" | "stripeCustomerId">>
+): Promise<void> {
+  const user = await getUserByEmail(email);
+  if (!user) return;
+  const updated = { ...user, ...updates };
+  const redis = getRedis();
+  if (redis) {
+    await redis.set(userKey(email), updated);
+    if (updates.stripeCustomerId) {
+      await redis.set(`socialhub:stripe:${updates.stripeCustomerId}`, email.toLowerCase());
+    }
+  } else {
+    const users = readLocalUsers();
+    users[email.toLowerCase()] = updated;
+    writeLocalUsers(users);
+  }
+}
+
+export async function getUserByStripeCustomerId(customerId: string): Promise<User | null> {
+  const redis = getRedis();
+  if (redis) {
+    const email = await redis.get<string>(`socialhub:stripe:${customerId}`);
+    if (!email) return null;
+    return redis.get<User>(userKey(email));
+  }
+  const users = readLocalUsers();
+  return Object.values(users).find((u) => u.stripeCustomerId === customerId) ?? null;
+}
+
 export async function createUser(
   email: string,
   password: string,
@@ -61,7 +93,7 @@ export async function createUser(
     email: email.toLowerCase(),
     name: name.trim(),
     passwordHash,
-    plan: "pro",
+    plan: "free",
     createdAt: Date.now(),
   };
 

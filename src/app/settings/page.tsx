@@ -1,7 +1,8 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
+import { useSearchParams } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { Bell, Shield, Palette, Globe, ChevronRight } from "lucide-react";
+import { Bell, Shield, Palette, Globe, ChevronRight, CreditCard, Zap, CheckCircle2, Loader2 } from "lucide-react";
 
 const SECTIONS = [
   {
@@ -53,6 +54,122 @@ function Toggle({ enabled, onToggle }: { enabled: boolean; onToggle: () => void 
   );
 }
 
+function BillingSection() {
+  const searchParams = useSearchParams();
+  const upgraded = searchParams.get("upgraded") === "1";
+  const [user, setUser] = useState<{ plan: string; hasStripe: boolean } | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [actionLoading, setActionLoading] = useState(false);
+
+  const fetchUser = useCallback(async () => {
+    const res = await fetch("/api/me");
+    if (res.ok) setUser(await res.json());
+    setLoading(false);
+  }, []);
+
+  useEffect(() => { fetchUser(); }, [fetchUser]);
+
+  const handleUpgrade = async () => {
+    setActionLoading(true);
+    const res = await fetch("/api/stripe/checkout", { method: "POST" });
+    const { url } = await res.json();
+    if (url) window.location.href = url;
+    else setActionLoading(false);
+  };
+
+  const handleManage = async () => {
+    setActionLoading(true);
+    const res = await fetch("/api/stripe/portal", { method: "POST" });
+    const { url } = await res.json();
+    if (url) window.location.href = url;
+    else setActionLoading(false);
+  };
+
+  const isPro = user?.plan === "pro";
+
+  return (
+    <div className="bg-white/[0.03] border border-white/[0.07] rounded-2xl overflow-hidden">
+      <div className="flex items-center gap-3 px-6 py-4 border-b border-white/5">
+        <div className="w-9 h-9 rounded-xl bg-violet-500/10 flex items-center justify-center">
+          <CreditCard className="w-4.5 h-4.5 text-violet-400" size={18} />
+        </div>
+        <div>
+          <p className="text-white font-semibold text-sm">Billing</p>
+          <p className="text-white/30 text-xs">Manage your subscription</p>
+        </div>
+      </div>
+
+      <div className="px-6 py-5 space-y-4">
+        {upgraded && (
+          <div className="flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/20 rounded-xl px-4 py-3">
+            <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+            <p className="text-emerald-300 text-sm">Payment successful — you&apos;re on Pro!</p>
+          </div>
+        )}
+
+        {loading ? (
+          <div className="flex items-center gap-2 text-white/30 text-sm">
+            <Loader2 className="w-4 h-4 animate-spin" /> Loading…
+          </div>
+        ) : (
+          <>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-white/80 text-sm font-medium">Current plan</p>
+                <p className="text-white/30 text-xs mt-0.5">
+                  {isPro ? "All features unlocked" : "Limited to 2 platforms, no scheduling"}
+                </p>
+              </div>
+              <span className={cn(
+                "text-xs font-semibold px-3 py-1 rounded-full",
+                isPro
+                  ? "bg-violet-500/20 text-violet-300 border border-violet-500/30"
+                  : "bg-white/5 text-white/40 border border-white/10"
+              )}>
+                {isPro ? "Pro" : "Free"}
+              </span>
+            </div>
+
+            {!isPro && (
+              <div className="bg-violet-500/5 border border-violet-500/15 rounded-xl p-4 space-y-3">
+                <p className="text-white font-medium text-sm flex items-center gap-2">
+                  <Zap className="w-4 h-4 text-violet-400" /> Upgrade to Pro
+                </p>
+                <ul className="space-y-1.5 text-xs text-white/50">
+                  {["All social platforms", "Unlimited scheduled posts", "Analytics & insights", "Priority support"].map(f => (
+                    <li key={f} className="flex items-center gap-2">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-violet-400 shrink-0" /> {f}
+                    </li>
+                  ))}
+                </ul>
+                <button
+                  onClick={handleUpgrade}
+                  disabled={actionLoading}
+                  className="w-full flex items-center justify-center gap-2 bg-violet-600 hover:bg-violet-500 disabled:opacity-50 text-white text-sm font-semibold py-2.5 rounded-xl transition-colors"
+                >
+                  {actionLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4" />}
+                  Upgrade — $29 / month
+                </button>
+              </div>
+            )}
+
+            {isPro && user?.hasStripe && (
+              <button
+                onClick={handleManage}
+                disabled={actionLoading}
+                className="flex items-center gap-2 text-white/50 hover:text-white/80 text-sm transition-colors disabled:opacity-50"
+              >
+                {actionLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <ChevronRight className="w-4 h-4" />}
+                Manage billing & invoices
+              </button>
+            )}
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function Settings() {
   const [settings, setSettings] = useState(
     SECTIONS.map((s) => ({
@@ -86,6 +203,8 @@ export default function Settings() {
       </div>
 
       <div className="space-y-6">
+        <BillingSection />
+
         {settings.map((section, si) => (
           <div
             key={section.title}
