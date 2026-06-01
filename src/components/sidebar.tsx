@@ -13,6 +13,7 @@ import {
   Bell,
   CalendarClock,
   Compass,
+  HelpCircle,
   LogOut,
 } from "lucide-react";
 
@@ -27,7 +28,8 @@ const navItems = [
 
 const bottomItems = [
   { href: "/notifications", label: "Notifications", icon: Bell },
-  { href: "/settings", label: "Settings", icon: Settings },
+  { href: "/settings",      label: "Settings",       icon: Settings },
+  { href: "/help",          label: "Help",            icon: HelpCircle },
 ];
 
 // Desktop sidebar — hidden on mobile
@@ -118,9 +120,9 @@ export function MobileNav() {
     { href: "/dashboard",  label: "Home",      icon: LayoutDashboard },
     { href: "/compose",    label: "Compose",   icon: PenSquare },
     { href: "/scheduled",  label: "Scheduled", icon: CalendarClock },
-    { href: "/discover",   label: "Discover",  icon: Compass },
     { href: "/accounts",   label: "Accounts",  icon: Users },
     { href: "/settings",   label: "Settings",  icon: Settings },
+    { href: "/help",       label: "Help",      icon: HelpCircle },
   ];
 
   return (
