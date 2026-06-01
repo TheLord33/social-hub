@@ -1,4 +1,4 @@
-import { Redis } from "@upstash/redis";
+import { redisClient } from "./redis";
 import bcrypt from "bcryptjs";
 import { randomUUID } from "crypto";
 import fs from "fs";
@@ -16,14 +16,7 @@ export interface User {
 
 const USERS_FILE = path.join(process.cwd(), "data", "users.json");
 
-let _redis: Redis | null | undefined;
-function getRedis(): Redis | null {
-  if (_redis !== undefined) return _redis;
-  _redis = process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN
-    ? new Redis({ url: process.env.UPSTASH_REDIS_REST_URL, token: process.env.UPSTASH_REDIS_REST_TOKEN })
-    : null;
-  return _redis;
-}
+function getRedis() { return redisClient.isAvailable() ? redisClient : null; }
 
 function userKey(email: string) {
   return `socialhub:user:${email.toLowerCase()}`;

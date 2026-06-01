@@ -1,4 +1,4 @@
-import { Redis } from "@upstash/redis";
+import { redisClient } from "./redis";
 import fs from "fs";
 import path from "path";
 import { Platform } from "./data";
@@ -32,20 +32,7 @@ export interface ScheduledPost {
   results?: PostResult[];
 }
 
-let _redis: Redis | null | undefined;
-
-function getRedis(): Redis | null {
-  if (_redis !== undefined) return _redis;
-  if (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN) {
-    _redis = new Redis({
-      url: process.env.UPSTASH_REDIS_REST_URL,
-      token: process.env.UPSTASH_REDIS_REST_TOKEN,
-    });
-  } else {
-    _redis = null;
-  }
-  return _redis;
-}
+function getRedis() { return redisClient.isAvailable() ? redisClient : null; }
 
 async function read(): Promise<ScheduledPost[]> {
   const redis = getRedis();
