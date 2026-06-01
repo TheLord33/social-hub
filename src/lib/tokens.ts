@@ -142,6 +142,33 @@ export async function refreshTwitterIfNeeded(userId: string): Promise<string | n
   return data.access_token;
 }
 
+export async function refreshLinkedInIfNeeded(userId: string): Promise<string | null> {
+  const t = await getToken("linkedin", userId);
+  if (!t) return null;
+  if (!t.expiresAt || Date.now() < t.expiresAt - 60_000) return t.accessToken;
+  if (!t.refreshToken) return null;
+
+  const res = await fetch("https://www.linkedin.com/oauth/v2/accessToken", {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({
+      grant_type: "refresh_token",
+      refresh_token: t.refreshToken,
+      client_id: process.env.LINKEDIN_CLIENT_ID!,
+      client_secret: process.env.LINKEDIN_CLIENT_SECRET!,
+    }),
+  });
+  if (!res.ok) return null;
+  const data = await res.json();
+  await setToken("linkedin", {
+    ...t,
+    accessToken: data.access_token,
+    refreshToken: data.refresh_token ?? t.refreshToken,
+    expiresAt: Date.now() + data.expires_in * 1000,
+  }, userId);
+  return data.access_token;
+}
+
 export async function refreshTikTokIfNeeded(userId: string): Promise<string | null> {
   const t = await getToken("tiktok", userId);
   if (!t) return null;

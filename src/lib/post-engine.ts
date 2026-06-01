@@ -1,4 +1,4 @@
-import { getToken, refreshTwitterIfNeeded, refreshTikTokIfNeeded, refreshRedditIfNeeded, refreshYouTubeIfNeeded } from "./tokens";
+import { getToken, refreshTwitterIfNeeded, refreshLinkedInIfNeeded, refreshTikTokIfNeeded, refreshRedditIfNeeded, refreshYouTubeIfNeeded } from "./tokens";
 import { MediaType } from "./compatibility";
 
 export interface PostResult {
@@ -128,6 +128,8 @@ async function postToInstagram(content: string, mediaType: MediaType, mediaUrl: 
 // ─── LinkedIn ─────────────────────────────────────────────────────────────────
 
 async function postToLinkedIn(content: string, mediaType: MediaType, mediaUrl: string | undefined, userId: string): Promise<PostResult> {
+  const accessToken = await refreshLinkedInIfNeeded(userId);
+  if (!accessToken) return { platform: "linkedin", success: false, error: "Not connected" };
   const t = await getToken("linkedin", userId);
   if (!t) return { platform: "linkedin", success: false, error: "Not connected" };
 
@@ -142,7 +144,7 @@ async function postToLinkedIn(content: string, mediaType: MediaType, mediaUrl: s
   const res = await fetch("https://api.linkedin.com/v2/ugcPosts", {
     method: "POST",
     headers: {
-      Authorization: `Bearer ${t.accessToken}`,
+      Authorization: `Bearer ${accessToken}`,
       "Content-Type": "application/json",
       "X-Restli-Protocol-Version": "2.0.0",
     },
