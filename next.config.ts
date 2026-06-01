@@ -14,6 +14,7 @@ const withPWA = withPWAInit({
 
 const nextConfig: NextConfig = {
   output: "standalone",
+  serverExternalPackages: ["ioredis"],
   turbopack: { root: __dirname },
   async rewrites() {
     return [
