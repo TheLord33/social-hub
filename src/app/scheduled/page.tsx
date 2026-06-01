@@ -144,9 +144,13 @@ export default function ScheduledPage() {
 
   const fetch_ = useCallback(async () => {
     setLoading(true);
-    const res = await fetch("/api/schedule");
-    setPosts(await res.json());
-    setLoading(false);
+    try {
+      const res = await fetch("/api/schedule");
+      const data = await res.json();
+      if (Array.isArray(data)) setPosts(data);
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   useEffect(() => { fetch_(); }, [fetch_]);

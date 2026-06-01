@@ -5,6 +5,7 @@ let _client: IORedis | null | undefined;
 function getClient(): IORedis | null {
   if (_client !== undefined) return _client;
   _client = process.env.REDIS_URL ? new IORedis(process.env.REDIS_URL, { lazyConnect: false }) : null;
+  _client?.on("error", (err) => console.error("[redis]", err.message));
   return _client;
 }
 
