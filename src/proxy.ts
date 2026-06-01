@@ -7,7 +7,7 @@ const { auth } = NextAuth(authConfig);
 const TIKTOK_TOKEN =
   "tiktok-developers-site-verification=Ko9YS5n8qaCaIZCI3xAxjwqNdARhc2ZN\ntiktok-developers-site-verification=IIhVBmZ5nry1Zc6HZXCXuUBZoBvxfr2s\ntiktok-developers-site-verification=DRrcz63CHYhAHPnKMCzaC4YzFd1LROEC";
 
-const PUBLIC_PATHS = new Set(["/", "/login", "/register"]);
+const PUBLIC_PATHS = new Set(["/", "/login", "/register", "/forgot-password", "/reset-password"]);
 
 export default auth((req) => {
   const { pathname } = req.nextUrl;
