@@ -299,7 +299,7 @@ export default function HelpPage() {
       {/* Footer links */}
       <div className="flex flex-wrap gap-3">
         <a
-          href="https://github.com/your-org/social-hub"
+          href="https://github.com/TheLord33/social-hub/blob/docker/README.md"
           target="_blank"
           rel="noopener noreferrer"
           className="flex items-center gap-2 text-white/30 hover:text-violet-400 text-xs transition"
@@ -309,7 +309,7 @@ export default function HelpPage() {
         </a>
         <span className="text-white/10">·</span>
         <a
-          href="https://github.com/your-org/social-hub/issues"
+          href="https://github.com/TheLord33/social-hub/issues"
           target="_blank"
           rel="noopener noreferrer"
           className="flex items-center gap-2 text-white/30 hover:text-violet-400 text-xs transition"
