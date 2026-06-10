@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
   const appSecret = process.env.META_APP_SECRET!;
 
   const tokenRes = await fetch(
-    `https://graph.facebook.com/v18.0/oauth/access_token?` +
+    `https://graph.facebook.com/v21.0/oauth/access_token?` +
       new URLSearchParams({ client_id: appId, client_secret: appSecret, redirect_uri: `${baseUrl}/api/auth/meta/callback`, code })
   );
 
@@ -38,12 +38,12 @@ export async function GET(request: NextRequest) {
   const { access_token: shortToken } = await tokenRes.json();
 
   const longRes = await fetch(
-    `https://graph.facebook.com/v18.0/oauth/access_token?` +
+    `https://graph.facebook.com/v21.0/oauth/access_token?` +
       new URLSearchParams({ grant_type: "fb_exchange_token", client_id: appId, client_secret: appSecret, fb_exchange_token: shortToken })
   );
   const { access_token: longToken } = longRes.ok ? await longRes.json() : { access_token: shortToken };
 
-  const pagesRes = await fetch(`https://graph.facebook.com/v18.0/me/accounts?access_token=${longToken}`);
+  const pagesRes = await fetch(`https://graph.facebook.com/v21.0/me/accounts?access_token=${longToken}`);
   if (!pagesRes.ok) return Response.redirect(`${baseUrl}/accounts?error=meta_pages_failed`);
 
   const pagesData = await pagesRes.json();
@@ -55,14 +55,14 @@ export async function GET(request: NextRequest) {
   await setToken("facebook", { pageAccessToken: page.access_token, pageId: page.id, pageName: page.name }, userId);
 
   const igRes = await fetch(
-    `https://graph.facebook.com/v18.0/${page.id}?fields=instagram_business_account&access_token=${page.access_token}`
+    `https://graph.facebook.com/v21.0/${page.id}?fields=instagram_business_account&access_token=${page.access_token}`
   );
 
   if (igRes.ok) {
     const igData = await igRes.json();
     if (igData.instagram_business_account?.id) {
       const igId = igData.instagram_business_account.id;
-      const igUserRes = await fetch(`https://graph.facebook.com/v18.0/${igId}?fields=username&access_token=${page.access_token}`);
+      const igUserRes = await fetch(`https://graph.facebook.com/v21.0/${igId}?fields=username&access_token=${page.access_token}`);
       const igUser = igUserRes.ok ? await igUserRes.json() : {};
       await setToken("instagram", { igUserId: igId, pageId: page.id, pageAccessToken: page.access_token, username: igUser.username ?? igId }, userId);
     }

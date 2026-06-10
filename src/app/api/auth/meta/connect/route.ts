@@ -30,5 +30,5 @@ export async function GET() {
     response_type: "code",
   });
 
-  return Response.redirect(`https://www.facebook.com/v18.0/dialog/oauth?${params}`);
+  return Response.redirect(`https://www.facebook.com/v21.0/dialog/oauth?${params}`);
 }
