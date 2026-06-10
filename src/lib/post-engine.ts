@@ -59,13 +59,13 @@ async function postToFacebook(content: string, mediaType: MediaType, mediaUrl: s
   let body: Record<string, string>;
 
   if (mediaType === "video" && mediaUrl) {
-    endpoint = `https://graph.facebook.com/v18.0/${t.pageId}/videos`;
+    endpoint = `https://graph.facebook.com/v21.0/${t.pageId}/videos`;
     body = { description: content, file_url: mediaUrl, access_token: t.pageAccessToken };
   } else if (mediaType === "image" && mediaUrl) {
-    endpoint = `https://graph.facebook.com/v18.0/${t.pageId}/photos`;
+    endpoint = `https://graph.facebook.com/v21.0/${t.pageId}/photos`;
     body = { message: content, url: mediaUrl, access_token: t.pageAccessToken };
   } else {
-    endpoint = `https://graph.facebook.com/v18.0/${t.pageId}/feed`;
+    endpoint = `https://graph.facebook.com/v21.0/${t.pageId}/feed`;
     body = { message: content, access_token: t.pageAccessToken };
   }
 
@@ -98,7 +98,7 @@ async function postToInstagram(content: string, mediaType: MediaType, mediaUrl: 
     ? { media_type: "REELS", video_url: mediaUrl, caption: content, access_token: t.pageAccessToken }
     : { image_url: mediaUrl, caption: content, access_token: t.pageAccessToken };
 
-  const containerRes = await fetch(`https://graph.facebook.com/v18.0/${t.igUserId}/media`, {
+  const containerRes = await fetch(`https://graph.facebook.com/v21.0/${t.igUserId}/media`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(containerBody),
@@ -110,7 +110,7 @@ async function postToInstagram(content: string, mediaType: MediaType, mediaUrl: 
   }
 
   const { id: containerId } = await containerRes.json();
-  const publishRes = await fetch(`https://graph.facebook.com/v18.0/${t.igUserId}/media_publish`, {
+  const publishRes = await fetch(`https://graph.facebook.com/v21.0/${t.igUserId}/media_publish`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ creation_id: containerId, access_token: t.pageAccessToken }),
