@@ -5,7 +5,7 @@ import { NextResponse } from "next/server";
 const { auth } = NextAuth(authConfig);
 
 const TIKTOK_TOKEN =
-  "tiktok-developers-site-verification=Ko9YS5n8qaCaIZCI3xAxjwqNdARhc2ZN\ntiktok-developers-site-verification=IIhVBmZ5nry1Zc6HZXCXuUBZoBvxfr2s\ntiktok-developers-site-verification=DRrcz63CHYhAHPnKMCzaC4YzFd1LROEC\ntiktok-developers-site-verification=ZBiBQ1jJD08RGzWVd8t80YkEygX2UqTd\ntiktok-developers-site-verification=fnrHzdUMVl6LLPu0HAY1E60lvXLRvhby";
+  "tiktok-developers-site-verification=Ko9YS5n8qaCaIZCI3xAxjwqNdARhc2ZN\ntiktok-developers-site-verification=IIhVBmZ5nry1Zc6HZXCXuUBZoBvxfr2s\ntiktok-developers-site-verification=DRrcz63CHYhAHPnKMCzaC4YzFd1LROEC\ntiktok-developers-site-verification=ZBiBQ1jJD08RGzWVd8t80YkEygX2UqTd\ntiktok-developers-site-verification=fnrHzdUMVl6LLPu0HAY1E60lvXLRvhby\ntiktok-developers-site-verification=0qMzSG5U6iug0RctAv3L5kj39hay3TiG";
 
 const PUBLIC_PATHS = new Set(["/", "/login", "/register", "/forgot-password", "/reset-password"]);
 
