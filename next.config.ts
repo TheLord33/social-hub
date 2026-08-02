@@ -15,7 +15,7 @@ const withPWA = withPWAInit({
 const nextConfig: NextConfig = {
   turbopack: { root: __dirname },
   experimental: {
-    middlewareClientMaxBodySize: "500mb",
+    proxyClientMaxBodySize: "500mb",
   },
   async rewrites() {
     return [
