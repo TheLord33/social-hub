@@ -1,7 +1,8 @@
 services:
   app:
     build: .
-    # Not exposed directly — all traffic goes through Caddy
+    ports:
+      - "3001:3000"
     env_file:
       - .env.local
     environment:

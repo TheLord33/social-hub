@@ -16,6 +16,9 @@ const nextConfig: NextConfig = {
   output: "standalone",
   serverExternalPackages: ["ioredis"],
   turbopack: { root: __dirname },
+  experimental: {
+    proxyClientMaxBodySize: "500mb",
+  },
   async rewrites() {
     return [
       {
